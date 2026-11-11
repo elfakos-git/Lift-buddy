@@ -81,7 +81,12 @@ button.row{cursor:pointer}
 .ph i{position:absolute;inset:0;background-size:200% 100%;background-repeat:no-repeat}
 .ph i.b{background-position:100% 0;animation:phx 2.8s infinite}
 @keyframes phx{0%,36%{opacity:0}50%,86%{opacity:1}100%{opacity:0}}
-.pht{display:block;width:46px;height:31px;border-radius:8px;background-image:url(img/thumbs.jpg);background-size:800% 600%;background-repeat:no-repeat}
+.pht{display:block;width:46px;height:31px;border-radius:8px;background-image:url(img/thumbs.jpg);background-repeat:no-repeat}
+.holdbox{background:var(--soft);border-radius:18px;padding:12px 10px 14px;text-align:center}
+.holdt{font-family:var(--display);font-weight:700;font-size:58px;line-height:1.05;font-variant-numeric:tabular-nums}
+.holdt.hit{color:var(--ok)}
+.holdsub{color:var(--muted);font-weight:800;font-size:13px}
+.focus .linkbtn{padding:4px 16px}
 .figbtn:has(.ph){width:108px;height:72px;overflow:hidden}
 .sheet>*{flex-shrink:0}
 .sheet .big.photo{display:block;padding:0;overflow:hidden}
@@ -425,6 +430,15 @@ Object.assign(EX,{
  woodchop:{name:"Cable woodchop",mus:"Side core (obliques), abs",tip:"Stand side-on to a high cable and hold the handle with both hands. With arms almost straight, pull it down and across your body to the opposite hip, turning your chest with it, then return slowly. Do all reps, then switch sides.",start:8,inc:2.5,grp:"core",p:["obliques"],s:["abs","delts"],
   fig:{f:[[[10,4],[10,92]]],a:{h:[60,22],l:[[[60,32],[60,60]],[[50,36],[70,36]],[[50,36],[42,28],[36,18]],[[70,36],[54,26],[36,18]],[[60,60],[52,76],[50,92]],[[60,60],[68,76],[70,92]],[[36,18],[10,4]]],d:[[36,18,3.2]]},b:{h:[62,23],l:[[[61,33],[60,60]],[[52,38],[72,36]],[[52,38],[66,52],[84,62]],[[72,36],[80,50],[84,62]],[[60,60],[52,76],[50,92]],[[60,60],[68,76],[70,92]],[[84,62],[10,4]]],d:[[84,62,3.2]]}}}
 });
+{const noDot=f=>({f:f.f,a:{...f.a,d:[]},b:{...f.b,d:[]}}), Q={grp:"quads",p:["quads","glutes"],s:["hams"],mus:"Quads, glutes"};
+Object.assign(EX,{
+ barbell_squat:{...Q,name:"Barbell squat",tip:"Rest the bar across your upper back and stand with your feet about shoulder-width apart. Sit down and back as low as feels fine on your knees, keeping your chest up, then stand. Set the safety bars just below your lowest point.",start:20,inc:2.5,fig:EX.smith_squat.fig},
+ bw_squat:{...Q,name:"Bodyweight squat",tip:"Stand with your feet about shoulder-width apart. Sit down and back as low as feels fine on your knees, keeping your heels on the floor, then stand. Leave the weight at 0.",start:0,inc:2.5,fig:noDot(EX.goblet_squat.fig)},
+ db_squat:{...Q,name:"Dumbbell squat",tip:"Hold a dumbbell in each hand at your sides. Sit down and back as low as feels fine on your knees, keeping your chest up, then stand.",start:8,inc:1,each:true,fig:EX.goblet_squat.fig},
+ bulgarian:{...Q,name:"Bulgarian split squat",tip:"Stand a long step in front of a bench and rest the top of your back foot on it. Lower straight down until your front thigh is about level with the floor, then push up through your front foot. Hold dumbbells at your sides, or use a bar as in the photo. Do all reps, then switch legs.",start:6,inc:1,each:true,fig:EX.split_squat.fig},
+ pistol_squat:{...Q,name:"Single-leg squat",tip:"Stand on one leg with the other held out in front. Sit back and down as low as you can control, then stand up. Hold a rack or squat to a box to make it easier, or hold a weight at your chest as in the photo to make it harder. Do all reps, then switch legs.",start:0,inc:1,fig:EX.step_down.fig},
+ step_up:{...Q,name:"Step-up",tip:"Stand facing a bench or box with a dumbbell in each hand. Put one foot on it and push through that leg to stand on top, then lower yourself back down slowly. Do all reps, then switch legs.",start:6,inc:1,each:true,fig:EX.step_down.fig}
+});}
 EX.hanging_knee_raise.name="Knee raise (hanging or supported)";
 EX.hanging_knee_raise.tip="Hang from a bar, or rest your forearms on the pads of a knee-raise station. Pull your knees up toward your chest without swinging, pause, then lower slowly. Leave the weight at 0.";
 const GROUPS=[["Chest",["chest"]],["Back",["lats","traps","lowback"]],["Shoulders",["delts"]],["Biceps",["biceps"]],["Triceps",["triceps"]],["Quads",["quads"]],["Hamstrings and glutes",["hams","glutes"]],["Calves",["calves"]],["Core",["abs","obliques"]]];
@@ -493,7 +507,7 @@ try{const sp=JSON.parse(localStorage.getItem(LSP)||"null"); if(sp&&cleanDays(sp.
 const $=s=>document.querySelector(s);
 const LS="liftbuddy.sessions.v1";
 let sessions=[]; try{sessions=JSON.parse(localStorage.getItem(LS)||"[]")||[]}catch(e){}
-let editMode=false, S=null, doneView=null, cur={e:0,s:0}, vals={w:0,r:0}, editing=false, touched=false;
+let hold=null, editMode=false, S=null, doneView=null, cur={e:0,s:0}, vals={w:0,r:0}, editing=false, touched=false;
 let rest=null, lastPR=null, popKey=null, db=null, syncState="phone";
 const progDay=s=>PROGRAM[s.day]||PROGRAM[0];
 const planOf=s=>s.plan||progDay(s).ex;
@@ -534,6 +548,7 @@ function target(x,i){
   return allTop?{w:ref.w+x.inc,r:x.lo,ref,up:true}:{w:ref.w,r:Math.min(ref.r+1,x.hi),ref};
 }
 function initVals(){
+  hold=null;
   if(!dayOf(S).ex.length) return;
   const x=exOf(S,cur.e), lg=S.log[x.id]||[];
   if(lg[cur.s]){vals={...lg[cur.s]};editing=true;return}
@@ -552,13 +567,13 @@ function figInner(fig,t){
     `<circle class="hd" cx="${h[0].toFixed(1)}" cy="${h[1].toFixed(1)}" r="7.5"/>`+
     d.map(c=>`<circle class="pp" cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${c[2]}"/>`).join("");
 }
-const PHOTO={"chest_press":0,"lat_pulldown":1,"shoulder_press":2,"seated_row":3,"lateral_raise":4,"curl":5,"pushdown":6,"leg_press":7,"rdl":8,"leg_ext":9,"leg_curl":10,"calf_raise":11,"plank":12,"split_squat":13,"incline_press":14,"cs_row":15,"hip_thrust":16,"db_bench":17,"goblet_squat":18,"hammer_curl":19,"machine_shoulder_press":20,"machine_row":21,"db_rdl":22,"push_up":23,"face_pull":24,"crunch":25,"pec_fly":26,"dip":27,"close_grip_pulldown":28,"pull_up":29,"one_arm_row":30,"back_extension":31,"cable_lateral":32,"reverse_fly":33,"incline_curl":34,"cable_curl":35,"overhead_ext":36,"skull_crusher":37,"smith_squat":38,"reverse_lunge":39,"lying_leg_curl":40,"glute_bridge":41,"seated_calf_raise":42,"hanging_knee_raise":43,"side_plank":44,"pallof_press":45,"woodchop":46};
+const PHOTO={"chest_press":0,"lat_pulldown":1,"shoulder_press":2,"seated_row":3,"lateral_raise":4,"curl":5,"pushdown":6,"leg_press":7,"rdl":8,"leg_ext":9,"leg_curl":10,"calf_raise":11,"plank":12,"split_squat":13,"incline_press":14,"cs_row":15,"hip_thrust":16,"db_bench":17,"goblet_squat":18,"hammer_curl":19,"machine_shoulder_press":20,"machine_row":21,"db_rdl":22,"push_up":23,"face_pull":24,"crunch":25,"pec_fly":26,"dip":27,"close_grip_pulldown":28,"pull_up":29,"one_arm_row":30,"back_extension":31,"cable_lateral":32,"reverse_fly":33,"incline_curl":34,"cable_curl":35,"overhead_ext":36,"skull_crusher":37,"smith_squat":38,"reverse_lunge":39,"lying_leg_curl":40,"glute_bridge":41,"seated_calf_raise":42,"hanging_knee_raise":43,"side_plank":44,"pallof_press":45,"woodchop":46,"barbell_squat":47,"bw_squat":48,"db_squat":49,"bulgarian":50,"pistol_squat":51,"step_up":52}; const PROWS=7;
 let PHOTOS=true; /* switched off if the photo files cannot be loaded, so the sketches take over */
 const hasPhoto=id=>PHOTOS&&PHOTO[id]!=null;
 const figSVG=(id,live)=>{
   if(!hasPhoto(id)) return sketchSVG(id,live);
   if(live) return `<span class="ph" aria-hidden="true"><i style="background-image:url(img/${id}.jpg)"></i><i class="b" style="background-image:url(img/${id}.jpg)"></i></span>`;
-  const n=PHOTO[id]; return `<span class="pht" aria-hidden="true" style="background-position:${(n%8)/7*100}% ${Math.floor(n/8)/5*100}%"></span>`;
+  const n=PHOTO[id]; return `<span class="pht" aria-hidden="true" style="background-size:800% ${PROWS*100}%;background-position:${(n%8)/7*100}% ${Math.floor(n/8)/(PROWS-1)*100}%"></span>`;
 };
 const sketchSVG=(id,live)=>`<svg class="fig${live?" live":""}" data-ex="${id}" viewBox="0 0 120 100" aria-hidden="true">${figInner(EX[id].fig,live?0:.5)}</svg>`;
 const still=matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -608,7 +623,8 @@ function render(){
   if(!dayOf(S).ex.length){main.innerHTML=`<div class="donecard"><h2>No exercises yet</h2><p>Add some to this day in the Program tab.</p></div>`;setSync();return}
   const x=exOf(S,cur.e), lg=S.log[x.id]||[], t=target(x,cur.s);
   let goal;
-  if(t.first) goal=`<div class="goal first">First time. Pick a weight you could lift for 2 or 3 more reps than you do.</div>`;
+  if(t.first&&x.timed) goal=`<div class="goal first">First time. Hold for as long as you can with good form.</div>`;
+  else if(t.first) goal=`<div class="goal first">First time. Pick a weight you could lift for 2 or 3 more reps than you do.</div>`;
   else if(x.timed) goal=`<div class="goal">Last time <b>${t.ref.r} sec</b>. Hold for <b>${t.r}</b> today.</div>`;
   else if(t.up) goal=`<div class="goal">You hit ${x.hi} reps on every set last time. <b>Go up to ${fmtW(t.w)} kg</b>.</div>`;
   else goal=`<div class="goal">Last time <b>${fmtW(t.ref.w)} kg × ${t.ref.r}</b>. ${t.r>t.ref.r?`Beat it with <b>${t.r}</b> reps.`:`Match it, then add weight next time.`}</div>`;
@@ -619,8 +635,13 @@ function render(){
       <div><h2>${x.name}</h2><div class="meta">Set ${cur.s+1} of ${x.sets} · ${x.lo}–${x.hi} ${x.timed?"sec":"reps"}</div></div><button type="button" class="swapbtn" id="swap">Swap</button></div>
     <div class="chips">${chips(x,lg,cur.e)}</div>
     ${goal}
-    <div class="steps${x.timed?" one":""}">${stepW}${stepR}</div>
-    <div class="gorow">${editing?`<button type="button" class="del" id="del">Delete</button>`:""}<button type="button" class="go" id="go">${CHECK}<span>${editing?"Update set":"Log set"}</span></button></div>
+    ${x.timed&&!editing?(hold?`<div class="holdbox"><div class="holdt" id="holdT" aria-live="off">0:00</div><div class="holdsub">Target ${hold.target} sec</div></div>
+    <div class="gorow"><button type="button" class="go" id="holdStop">${CHECK}<span>Stop and log</span></button></div>`
+    :`<div class="steps one">${stepR}</div>
+    <div class="gorow"><button type="button" class="go" id="holdStart"><span>Start timer</span></button></div>
+    <button type="button" class="linkbtn" id="go">Log without the timer</button>`)
+    :`<div class="steps${x.timed?" one":""}">${stepW}${stepR}</div>
+    <div class="gorow">${editing?`<button type="button" class="del" id="del">Delete</button>`:""}<button type="button" class="go" id="go">${CHECK}<span>${editing?"Update set":"Log set"}</span></button></div>`}
   </section>
   <div class="listh" style="margin-top:14px;margin-bottom:8px">Today <small>· tap an exercise to jump to it</small></div><div class="rows">`;
   dayOf(S).ex.forEach((p,i)=>{
@@ -853,6 +874,17 @@ function finish(){
 function hop(){const b=$("#buddy");b.classList.remove("hop");void b.getBoundingClientRect();b.classList.add("hop")}
 function wake(){try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{})}catch(e){}}
 
+/* hold timer for timed exercises */
+function startHold(){readInputs();stopRest();touched=true;hold={start:Date.now(),target:vals.r,buzzed:false};wake();render();holdTick()}
+function stopHold(){if(!hold) return;vals.r=Math.max(1,Math.round((Date.now()-hold.start)/1e3));hold=null;logSet()}
+function holdTick(){
+  if(!hold) return; const el=$("#holdT"); if(!el) return;
+  const s=Math.floor((Date.now()-hold.start)/1e3);
+  el.textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+  if(!hold.buzzed&&s>=hold.target){hold.buzzed=true;el.classList.add("hit");hop();try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
+  else if(hold.buzzed) el.classList.add("hit");
+}
+setInterval(holdTick,200);
 /* rest timer */
 function startRest(sec){rest={end:Date.now()+sec*1e3,total:sec*1e3,done:0};$("#rest").hidden=false;$("#rest").classList.remove("go-now");$("#buddy").classList.add("rest");tick()}
 function stopRest(){rest=null;$("#rest").hidden=true;$("#buddy").classList.remove("rest")}
@@ -948,6 +980,8 @@ let earlyArmed=0;
 document.addEventListener("click",e=>{
   const t=e.target;
   if(t.closest("#go")) return logSet();
+  if(t.closest("#holdStart")&&S) return startHold();
+  if(t.closest("#holdStop")&&S) return stopHold();
   if(t.closest("#del")) return delSet();
   if(t.closest("#add")&&S){addCtx={mode:"today"};return addSheet()}
   if(t.closest("#addBack")) return addSheet();
