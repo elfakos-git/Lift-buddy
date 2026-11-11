@@ -1037,6 +1037,7 @@ boot();
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 /* ---------- standalone extras: backup, persistent storage, offline ---------- */
+const APP_VERSION="11 Nov 14:29";
 (function(){
   const baseStats=renderStats;
   renderStats=function(){
@@ -1044,7 +1045,7 @@ boot();
     const n=sessions.filter(s=>s.start).length;
     const sec=document.createElement("section");
     sec.className="focus backup";
-    sec.innerHTML=`<h2 class="sm">Backup</h2><p class="note">Your workouts live on this phone only. Export a backup now and then, and keep it in Google Drive or email it to yourself. ${n} workout${n===1?"":"s"} saved.</p><div class="btns"><button type="button" class="ghost" id="bkExport">Export backup</button><button type="button" class="ghost" id="bkImport">Import backup</button></div><p class="note" id="bkMsg" aria-live="polite"></p>`;
+    sec.innerHTML=`<h2 class="sm">Backup</h2><p class="note">Your workouts live on this phone only. Export a backup now and then, and keep it in Google Drive or email it to yourself. ${n} workout${n===1?"":"s"} saved.</p><div class="btns"><button type="button" class="ghost" id="bkExport">Export backup</button><button type="button" class="ghost" id="bkImport">Import backup</button></div><p class="note" id="bkMsg" aria-live="polite"></p><p class="note">App version: ${APP_VERSION}</p>`;
     $("#vStats").appendChild(sec);
   };
   const msg=t=>{const m=$("#bkMsg"); if(m) m.textContent=t};
@@ -1085,6 +1086,21 @@ boot();
     const f=e.target.files&&e.target.files[0]; if(!f) return;
     const r=new FileReader(); r.onload=()=>importData(String(r.result)); r.readAsText(f); e.target.value="";
   });
+  /* pick up new versions without reinstalling: check when the app comes back to the front */
+  async function checkUpdate(){
+    try{
+      const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"}); if(!r.ok) return;
+      const v=(await r.json()).version; if(!v||v===APP_VERSION) return;
+      if(hold||rest) return; /* never interrupt a running timer; the next check will catch it */
+      let tried=""; try{tried=sessionStorage.getItem("lb.reloadedFor")||""}catch(e){}
+      if(tried===v) return;
+      try{sessionStorage.setItem("lb.reloadedFor",v)}catch(e){}
+      try{const reg=await navigator.serviceWorker.getRegistration(); if(reg) await reg.update()}catch(e){}
+      location.reload();
+    }catch(e){}
+  }
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden) checkUpdate()});
+  setTimeout(checkUpdate,2500);
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
   if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){
     addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
