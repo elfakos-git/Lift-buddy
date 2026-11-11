@@ -77,6 +77,15 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-of
 .fchips button{flex:none;height:36px;padding:0 14px;border-radius:999px;background:var(--soft);font-weight:800;font-size:13.5px;color:var(--muted)}
 .fchips button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 button.row{cursor:pointer}
+.ph{display:block;position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;border-radius:inherit;background:var(--soft)}
+.ph i{position:absolute;inset:0;background-size:200% 100%;background-repeat:no-repeat}
+.ph i.b{background-position:100% 0;animation:phx 2.8s infinite}
+@keyframes phx{0%,36%{opacity:0}50%,86%{opacity:1}100%{opacity:0}}
+.pht{display:block;width:46px;height:31px;border-radius:8px;background-image:url(img/thumbs.jpg);background-size:800% 600%;background-repeat:no-repeat}
+.figbtn:has(.ph){width:108px;height:72px;overflow:hidden}
+.sheet>*{flex-shrink:0}
+.sheet .big.photo{display:block;padding:0;overflow:hidden}
+.sheet .big.photo+.big svg{max-width:210px}
 .calh{display:flex;align-items:center;justify-content:space-between}
 .calh b{font-family:var(--display);font-weight:600;font-size:20px}
 .calh button{width:46px;height:42px;border-radius:13px;background:var(--soft);font-size:22px;font-weight:800;line-height:1}
@@ -416,6 +425,8 @@ Object.assign(EX,{
  woodchop:{name:"Cable woodchop",mus:"Side core (obliques), abs",tip:"Stand side-on to a high cable and hold the handle with both hands. With arms almost straight, pull it down and across your body to the opposite hip, turning your chest with it, then return slowly. Do all reps, then switch sides.",start:8,inc:2.5,grp:"core",p:["obliques"],s:["abs","delts"],
   fig:{f:[[[10,4],[10,92]]],a:{h:[60,22],l:[[[60,32],[60,60]],[[50,36],[70,36]],[[50,36],[42,28],[36,18]],[[70,36],[54,26],[36,18]],[[60,60],[52,76],[50,92]],[[60,60],[68,76],[70,92]],[[36,18],[10,4]]],d:[[36,18,3.2]]},b:{h:[62,23],l:[[[61,33],[60,60]],[[52,38],[72,36]],[[52,38],[66,52],[84,62]],[[72,36],[80,50],[84,62]],[[60,60],[52,76],[50,92]],[[60,60],[68,76],[70,92]],[[84,62],[10,4]]],d:[[84,62,3.2]]}}}
 });
+EX.hanging_knee_raise.name="Knee raise (hanging or supported)";
+EX.hanging_knee_raise.tip="Hang from a bar, or rest your forearms on the pads of a knee-raise station. Pull your knees up toward your chest without swinging, pause, then lower slowly. Leave the weight at 0.";
 const GROUPS=[["Chest",["chest"]],["Back",["lats","traps","lowback"]],["Shoulders",["delts"]],["Biceps",["biceps"]],["Triceps",["triceps"]],["Quads",["quads"]],["Hamstrings and glutes",["hams","glutes"]],["Calves",["calves"]],["Core",["abs","obliques"]]];
 const SUPPORT={chest:["triceps"],lats:["biceps"],traps:["biceps","delts"],delts:["triceps","traps"],quads:["hams","calves"],hams:["glutes","calves"],glutes:["abs"],biceps:[],triceps:[],calves:[],abs:["obliques"],obliques:[],lowback:[]};
 const MNAME={chest:"chest",lats:"lats",traps:"upper back",delts:"shoulders",biceps:"biceps",triceps:"triceps",quads:"quads",hams:"hamstrings",glutes:"glutes",calves:"calves",abs:"core",obliques:"side core",lowback:"lower back"};
@@ -541,7 +552,15 @@ function figInner(fig,t){
     `<circle class="hd" cx="${h[0].toFixed(1)}" cy="${h[1].toFixed(1)}" r="7.5"/>`+
     d.map(c=>`<circle class="pp" cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${c[2]}"/>`).join("");
 }
-const figSVG=(id,live)=>`<svg class="fig${live?" live":""}" data-ex="${id}" viewBox="0 0 120 100" aria-hidden="true">${figInner(EX[id].fig,live?0:.5)}</svg>`;
+const PHOTO={"chest_press":0,"lat_pulldown":1,"shoulder_press":2,"seated_row":3,"lateral_raise":4,"curl":5,"pushdown":6,"leg_press":7,"rdl":8,"leg_ext":9,"leg_curl":10,"calf_raise":11,"plank":12,"split_squat":13,"incline_press":14,"cs_row":15,"hip_thrust":16,"db_bench":17,"goblet_squat":18,"hammer_curl":19,"machine_shoulder_press":20,"machine_row":21,"db_rdl":22,"push_up":23,"face_pull":24,"crunch":25,"pec_fly":26,"dip":27,"close_grip_pulldown":28,"pull_up":29,"one_arm_row":30,"back_extension":31,"cable_lateral":32,"reverse_fly":33,"incline_curl":34,"cable_curl":35,"overhead_ext":36,"skull_crusher":37,"smith_squat":38,"reverse_lunge":39,"lying_leg_curl":40,"glute_bridge":41,"seated_calf_raise":42,"hanging_knee_raise":43,"side_plank":44,"pallof_press":45,"woodchop":46};
+let PHOTOS=true; /* switched off if the photo files cannot be loaded, so the sketches take over */
+const hasPhoto=id=>PHOTOS&&PHOTO[id]!=null;
+const figSVG=(id,live)=>{
+  if(!hasPhoto(id)) return sketchSVG(id,live);
+  if(live) return `<span class="ph" aria-hidden="true"><i style="background-image:url(img/${id}.jpg)"></i><i class="b" style="background-image:url(img/${id}.jpg)"></i></span>`;
+  const n=PHOTO[id]; return `<span class="pht" aria-hidden="true" style="background-position:${(n%8)/7*100}% ${Math.floor(n/8)/5*100}%"></span>`;
+};
+const sketchSVG=(id,live)=>`<svg class="fig${live?" live":""}" data-ex="${id}" viewBox="0 0 120 100" aria-hidden="true">${figInner(EX[id].fig,live?0:.5)}</svg>`;
 const still=matchMedia("(prefers-reduced-motion: reduce)").matches;
 function figLoop(ts){
   if(!document.hidden) document.querySelectorAll("svg.fig.live").forEach(el=>{
@@ -752,7 +771,7 @@ function libList(){
 function infoSheet(id){
   const x=EX[id], last=history(id)[0];
   const lastLine=last?`<p class="note">Last time, ${new Date(last.start).toLocaleDateString(undefined,{day:"numeric",month:"short"})}: ${last.log[id].filter(Boolean).map(v=>fmtSet(x,v)).join(", ")}</p>`:"";
-  $("#sheet").innerHTML=`<div class="pair"><div class="big">${figSVG(id,true)}</div><div class="big">${muscleMap(x)}</div></div><div class="legend"><span><i></i>Main</span><span><i class="s"></i>Helping</span></div><div class="mus">${x.mus}</div><h3>${x.name}</h3><p>${x.tip}</p>${x.top?`<p class="note">★ Top pick: rated among the best for this muscle in the evidence-based rankings.</p>`:""}${x.knee?`<p class="note">Knee strength: a physiotherapy staple for knee pain on stairs.</p>`:""}${lastLine}<p class="note">Simple sketch for now. Real exercise photos are still to come.</p><button type="button" class="ghost" id="sheetClose">Got it</button>`;
+  $("#sheet").innerHTML=`${hasPhoto(id)?`<div class="big photo">${figSVG(id,true)}</div><div class="big">${muscleMap(x)}</div>`:`<div class="pair"><div class="big">${figSVG(id,true)}</div><div class="big">${muscleMap(x)}</div></div>`}<div class="legend"><span><i></i>Main</span><span><i class="s"></i>Helping</span></div><div class="mus">${x.mus}</div><h3>${x.name}</h3><p>${x.tip}</p>${x.top?`<p class="note">★ Top pick: rated among the best for this muscle in the evidence-based rankings.</p>`:""}${x.knee?`<p class="note">Knee strength: a physiotherapy staple for knee pain on stairs.</p>`:""}${lastLine}${hasPhoto(id)?"":`<p class="note">No photo for this one yet, so it keeps the sketch.</p>`}<button type="button" class="ghost" id="sheetClose">Got it</button>`;
   $("#sheetVeil").hidden=false; $("#sheet").scrollTop=0;
 }
 let progBusy=false, progDirty=false;
@@ -978,6 +997,7 @@ document.addEventListener("change",e=>{if(e.target.id==="inW"||e.target.id==="in
 document.addEventListener("input",e=>{if(e.target.id==="libQ"){libQ=e.target.value;libList()}});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&S&&S.start) wake()});
 boot();
+{const probe=new Image(); probe.onerror=()=>{PHOTOS=false; render(); if(view==="Lib") renderLib(); if(view==="Prog") renderProg()}; probe.src="img/thumbs.jpg"}
 </script>
 
 <input type="file" id="importFile" accept="application/json,.json" hidden>
