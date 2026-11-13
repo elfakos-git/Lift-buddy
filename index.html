@@ -187,6 +187,13 @@ button.row{cursor:pointer}
 .step input{width:100%;min-width:0;border:0;background:none;color:var(--ink);text-align:center;font-family:var(--display);font-weight:700;font-size:30px;font-variant-numeric:tabular-nums;padding:0;-moz-appearance:textfield;appearance:textfield}
 .step input::-webkit-outer-spin-button,.step input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .step input.bump{animation:bump .18s}
+.numw{position:relative;min-width:0;display:flex}
+.step input.long{font-size:24px}
+.half{position:absolute;top:-15px;right:-2px;width:20px;height:20px;transform:rotate(-12deg);border-radius:50%;background:var(--accent);color:var(--accent-ink);border:2px solid var(--card);display:grid;place-items:center;font:800 11px/1 var(--body);pointer-events:none;animation:pop .45s cubic-bezier(.3,1.7,.5,1);z-index:1}
+.half::after{content:"";position:absolute;inset:3px;border-radius:50%;border:1.5px solid currentColor;opacity:.35}
+.donecard .days{width:100%}
+.donecard .days button{display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.15}
+.donecard .days small{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;opacity:.75}
 @keyframes bump{50%{transform:scale(1.18)}}
 .go{height:66px;border-radius:20px;background:var(--accent);color:var(--accent-ink);font-family:var(--display);font-weight:600;font-size:23px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 5px 0 0 color-mix(in srgb,var(--accent) 70%,#000);transition:transform .08s,box-shadow .08s}
 .go:active{transform:translateY(4px);box-shadow:0 1px 0 0 color-mix(in srgb,var(--accent) 70%,#000)}
@@ -321,6 +328,8 @@ button.row{cursor:pointer}
 <canvas id="fx" aria-hidden="true"></canvas>
 
 <script>
+/* the gym's cable stacks are 10 lb plates labelled in kg: 5, 9, 14, 18, 23 ... 91 */
+const CABLE_STACK=Array.from({length:20},(_,n)=>Math.round((n+1)*4.5359237));
 /* ---------- exercise catalog: name, muscles, cue, starting weight, and a two-pose stick figure ---------- */
 const SEAT=[[55,66],[72,66],[72,88]], STAND_LEG=[[60,58],[60,76],[60,92]];
 const EX={
@@ -473,6 +482,8 @@ Object.assign(EX,{
  incline_reverse_fly:{name:"Incline dumbbell reverse fly",mus:"Rear shoulders, upper back",tip:"Lie chest-down on a low incline bench with a light dumbbell in each hand. With a slight bend in your elbows, raise your arms out to the sides until they are level with your shoulders, pause, then lower slowly.",start:4,inc:1,each:true,grp:"rear",p:["delts","traps"],s:[],fig:EX.cs_row.fig},
  rotary_torso:{name:"Rotary torso machine",mus:"Side core (obliques), abs",tip:"Sit with your chest against the upper pads, hold the handles, and put your knees between the lower pads. Set the start position to one side, then turn your lower body across under control and return slowly. Keep the weight light and the movement smooth. Do all reps, then set it up for the other side.",start:15,inc:5,grp:"core",p:["obliques"],s:["abs"],fig:EX.pallof_press.fig}
 });
+["seated_row","wide_row","pushdown","face_pull","pec_fly","cable_lateral","cable_curl","overhead_ext","pallof_press","woodchop","reverse_cable_fly"].forEach(k=>{const x=EX[k]; x.stack="cable"; x.start=CABLE_STACK.reduce((a,v)=>Math.abs(v-x.start)<Math.abs(a-x.start)?v:a,CABLE_STACK[0])});
+["chest_press","lat_pulldown","close_grip_pulldown","machine_shoulder_press","machine_row","leg_press","leg_ext","leg_curl","lying_leg_curl","calf_raise","seated_calf_raise","pec_deck","reverse_fly","machine_lateral","incline_machine_press","hip_thrust_machine","rotary_torso","hack_squat","smith_squat"].forEach(k=>{const x=EX[k]; x.inc=5; x.start=Math.max(5,Math.round(x.start/5)*5)});
 EX.machine_row.name="Seated row machine";
 EX.machine_row.tip="Sit with your chest against the pad. Pull the handles back until your elbows pass your sides, squeeze your shoulder blades, then reach forward again. The wide, horizontal handles with your elbows out work your upper back more. The narrow handles with your elbows tucked work your lats more.";
 EX.back_extension.name="45° back extension";
@@ -584,7 +595,14 @@ const dayOf=s=>({name:s.pname||progDay(s).name,ex:baseOf(s).filter(p=>EX[p.id])}
 const totalSets=s=>dayOf(s).ex.reduce((a,x)=>a+x.sets,0);
 const doneSets=s=>dayOf(s).ex.reduce((a,x)=>a+((s.log[x.id]||[]).filter(Boolean).length),0);
 const fmtW=w=>(Math.round(w*100)/100).toString();
-const fmtSet=(x,v)=>x.timed?v.r+"s":fmtW(v.w)+"×"+v.r;
+/* half kilos read as a little ½ instead of ".5", so 12.5 never needs more room than 12 */
+const fmtH=w=>{const r=Math.round(w*100)/100, i=Math.trunc(r); return Math.abs(r-i-.5)<1e-9?(i?i:"")+"½":String(r)};
+const fmtSet=(x,v)=>x.timed?v.r+"s":fmtH(v.w)+"×"+v.r;
+function stackStep(w,dir){
+  if(dir>0){const v=CABLE_STACK.find(v=>v>w+.01); return v!=null?v:Math.round(w+4.5)}
+  const below=CABLE_STACK.filter(v=>v<w-.01); return below.length?below[below.length-1]:0;
+}
+const nextW=(x,w,dir)=>x.stack==="cable"?stackStep(w,dir):Math.max(0,Math.round((w+dir*x.inc)*100)/100);
 const e1=(v,x)=>x.timed||!v.w?v.r:v.w*(1+v.r/30);
 
 function newSession(day){day=Math.min(day,PROGRAM.length-1);return {id:null,day,pname:PROGRAM[day].name,plan:clone(PROGRAM[day].ex),start:null,end:null,log:{},prs:0,updatedAt:0}}
@@ -619,7 +637,7 @@ function target(x,i){
   const arr=last.log[x.id].filter(Boolean), ref=last.log[x.id][i]||arr[arr.length-1];
   if(x.timed) return {w:0,r:Math.min(ref.r+5,x.hi),ref};
   const allTop=arr.length>=x.sets&&arr.every(v=>v.r>=x.hi);
-  return allTop?{w:ref.w+x.inc,r:x.lo,ref,up:true}:{w:ref.w,r:Math.min(ref.r+1,x.hi),ref};
+  return allTop?{w:nextW(x,ref.w,1),r:x.lo,ref,up:true}:{w:ref.w,r:Math.min(ref.r+1,x.hi),ref};
 }
 function initVals(){
   hold=null;
@@ -686,8 +704,8 @@ function render(){
   const days=$("#days"), main=$("#main");
   if(doneView){
     header(doneView); days.hidden=true;
-    const nx=PROGRAM[(doneView.day+1)%PROGRAM.length].name;
-    main.innerHTML=`<div class="donecard"><h2>${dayOf(doneView).name} day is done</h2><p>${doneView.prs?doneView.prs+" personal record"+(doneView.prs>1?"s":"")+" today. ":""}Next up: ${nx} day.</p>${statsHTML(doneView)}<button type="button" class="ghost" id="reopen">+ Add more to this workout</button><button type="button" class="ghost" id="startNext">Start ${nx} day now</button></div>`;
+    const nx=(doneView.day+1)%PROGRAM.length;
+    main.innerHTML=`<div class="donecard"><h2>Workout complete</h2><p>${dayOf(doneView).name} day${doneView.prs?" · "+doneView.prs+" personal record"+(doneView.prs>1?"s":""):""}</p>${statsHTML(doneView)}<button type="button" class="ghost" id="reopen">+ Add more to this workout</button><div class="subh" style="margin-top:6px">Start another workout</div><div class="days" role="group" aria-label="Choose a workout">${PROGRAM.map((d,i)=>`<button type="button" data-newday="${i}" aria-pressed="${i===nx}">${d.name}${i===nx?"<small>next</small>":""}</button>`).join("")}</div></div>`;
     setSync(); return;
   }
   header(S);
@@ -701,9 +719,9 @@ function render(){
   if(t.first&&x.timed) goal=`<div class="goal first">First time. Hold for as long as you can with good form.</div>`;
   else if(t.first) goal=`<div class="goal first">First time. Pick a weight you could lift for 2 or 3 more reps than you do.</div>`;
   else if(x.timed) goal=`<div class="goal">Last time <b>${t.ref.r} sec</b>. Hold for <b>${t.r}</b> today.</div>`;
-  else if(t.up) goal=`<div class="goal">You hit ${x.hi} reps on every set last time. <b>Go up to ${fmtW(t.w)} kg</b>.</div>`;
-  else goal=`<div class="goal">Last time <b>${fmtW(t.ref.w)} kg × ${t.ref.r}</b>. ${t.r>t.ref.r?`Beat it with <b>${t.r}</b> reps.`:`Match it, then add weight next time.`}</div>`;
-  const stepW=x.timed?"":`<div class="step"><label for="inW">kg${x.each?" each hand":""}</label><button type="button" data-step="w:-1" aria-label="Less weight">−</button><input id="inW" type="number" inputmode="decimal" step="any" value="${fmtW(vals.w)}"><button type="button" data-step="w:1" aria-label="More weight">+</button></div>`;
+  else if(t.up) goal=`<div class="goal">You hit ${x.hi} reps on every set last time. <b>Go up to ${fmtH(t.w)} kg</b>.</div>`;
+  else goal=`<div class="goal">Last time <b>${fmtH(t.ref.w)} kg × ${t.ref.r}</b>. ${t.r>t.ref.r?`Beat it with <b>${t.r}</b> reps.`:`Match it, then add weight next time.`}</div>`;
+  const stepW=x.timed?"":`<div class="step"><label for="inW">kg${x.each?" each hand":x.stack==="cable"?" on the stack":""}</label><button type="button" data-step="w:-1" aria-label="Less weight">−</button><span class="numw"><input id="inW" type="text" inputmode="decimal" autocomplete="off" aria-label="Weight in kg" value="${fmtW(vals.w)}"></span><button type="button" data-step="w:1" aria-label="More weight">+</button></div>`;
   const stepR=`<div class="step"><label for="inR">${x.timed?"seconds":"reps"}</label><button type="button" data-step="r:-1" aria-label="Fewer">−</button><input id="inR" type="number" inputmode="numeric" step="1" value="${vals.r}"><button type="button" data-step="r:1" aria-label="More">+</button></div>`;
   let h=(editMode?`<div class="goal first editbar"><span>Editing your workout from <b>${dstr(S.start)}</b></span><button type="button" id="editDone">Done</button></div>`:"")+`<section class="focus">
     <div class="fhead"><button type="button" class="figbtn" id="info" aria-label="How to do ${x.name}">${figSVG(x.id,true)}</button>
@@ -726,7 +744,7 @@ function render(){
   });
   h+=`</div><button type="button" class="addbtn" id="add">+ Add exercise</button>`;
   if(S.start&&!editMode) h+=`<div style="display:flex;justify-content:center"><button type="button" class="linkbtn" id="early">Finish workout</button></div>`;
-  main.innerHTML=h; popKey=null; setSync();
+  main.innerHTML=h; popKey=null; setSync(); showW();
   const fk=S.day+":"+x.id;
   if(lastFocus!==null&&fk!==lastFocus&&!still){const f=main.querySelector(".focus"); if(f&&f.animate) f.animate([{opacity:.25,transform:"translateX(26px) scale(.97)"},{opacity:1,transform:"none"}],{duration:320,easing:"cubic-bezier(.3,1.35,.5,1)"})}
   lastFocus=fk;
@@ -749,7 +767,7 @@ function flip(before,moved){ // rows glide from where they were to where they ar
   });
 }
 /* ---------- progress ---------- */
-const fmtLong=(x,v)=>x.timed?v.r+" sec":(v.w?fmtW(v.w)+" kg × ":"")+v.r+(v.w?"":" reps");
+const fmtLong=(x,v)=>x.timed?v.r+" sec":(v.w?fmtH(v.w)+" kg × ":"")+v.r+(v.w?"":" reps");
 const dstr=t=>new Date(t).toLocaleDateString(undefined,{day:"numeric",month:"short"});
 function exSeries(id){
   const x=EX[id];
@@ -849,7 +867,9 @@ function peSheet(){
   if(t.multi) ss+=`<p>In a superset with ${t.grp.filter(i=>i!==peCtx.j).map(i=>EX[ex[i].id].name).join(" and ")}.</p><button type="button" class="ghost" id="peBreak">Break this superset</button>`;
   else{const c=partnersFor(ex,peCtx.j);
     ss+=c.length?`<div class="opts">${c.map(o=>`<button type="button" class="opt" data-ppair="${o.i}"><span class="mini">${figSVG(ex[o.i].id,false)}</span><span>Pair with ${EX[ex[o.i].id].name}<small>${pairWhy(p.id,ex[o.i].id)}</small></span></button>`).join("")}</div>`:`<p>Nothing else on this day pairs well with this one.</p>`}
-  $("#sheet").innerHTML=`<div class="mus">${PROGRAM[peCtx.i].name} day</div><h3>${x.name}</h3>${p.note?`<p class="note">${p.note}</p>`:""}<div class="pe">${st("sets","Sets",p.sets)}${st("rest","Rest (sec)",p.rest)}${st("lo",u+" from",p.lo)}${st("hi",u+" to",p.hi)}</div>${ss}<button type="button" class="ghost" id="peRemove" style="color:var(--accent)">Remove from this day</button><button type="button" class="ghost" id="sheetClose">Done</button>`;
+  const used=ex.map(q=>q.id), alts=Object.keys(EX).filter(k=>EX[k].grp===x.grp&&!used.includes(k));
+  const rp=`<div class="subh">Replace with</div>`+(alts.length?`<div class="opts">${alts.map(k=>`<button type="button" class="opt" data-prep="${k}"><span class="mini">${figSVG(k,false)}</span><span>${EX[k].name}</span></button>`).join("")}</div>`:`<p>No alternative for this one in the library yet.</p>`);
+  $("#sheet").innerHTML=`<div class="mus">${PROGRAM[peCtx.i].name} day</div><h3>${x.name}</h3>${p.note?`<p class="note">${p.note}</p>`:""}<div class="pe">${st("sets","Sets",p.sets)}${st("rest","Rest (sec)",p.rest)}${st("lo",u+" from",p.lo)}${st("hi",u+" to",p.hi)}</div>${rp}${ss}<button type="button" class="ghost" id="peRemove" style="color:var(--accent)">Remove from this day</button><button type="button" class="ghost" id="sheetClose">Done</button>`;
   $("#sheetVeil").hidden=false;
 }
 function sugSheet(i){
@@ -900,14 +920,24 @@ function progChanged(){
 /* ---------- actions ---------- */
 function stepVal(k,dir){
   const x=exOf(S,cur.e);
-  if(k==="w") vals.w=Math.max(0,Math.round((vals.w+dir*x.inc)*100)/100);
+  if(k==="w") vals.w=nextW(x,vals.w,dir);
   else vals.r=Math.max(x.timed?5:1,vals.r+dir*(x.timed?5:1));
   const el=$(k==="w"?"#inW":"#inR"); if(!el) return;
-  el.value=k==="w"?fmtW(vals.w):vals.r; el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+  if(k==="w") showW(); else el.value=vals.r;
+  el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+}
+function showW(){ // whole kilos in the box; a half kilo becomes a small ½ plate on its shoulder
+  const el=$("#inW"); if(!el) return; const box=el.parentNode;
+  let b=box.querySelector(".half"); const i=Math.trunc(vals.w), half=Math.abs(vals.w-i-.5)<1e-9;
+  if(document.activeElement===el){el.value=fmtW(vals.w); el.classList.toggle("long",el.value.length>3); if(b) b.remove(); return}
+  el.value=half?String(i):fmtW(vals.w); el.classList.toggle("long",el.value.length>=3);
+  el.setAttribute("aria-label","Weight "+fmtW(vals.w)+" kg");
+  if(half&&!b){b=document.createElement("span");b.className="half";b.setAttribute("aria-hidden","true");b.textContent="½";box.appendChild(b)}
+  else if(!half&&b) b.remove();
 }
 function readInputs(){
   const w=$("#inW"), r=$("#inR");
-  if(w){const v=parseFloat(w.value); if(isFinite(v)&&v>=0) vals.w=v}
+  if(w&&w.dataset.dirty){const v=parseFloat(w.value.replace(",",".").replace("½",".5")); if(isFinite(v)&&v>=0) vals.w=Math.round(v*100)/100; delete w.dataset.dirty}
   if(r){const v=parseInt(r.value,10); if(isFinite(v)&&v>0) vals.r=v}
 }
 function logSet(){
@@ -1114,6 +1144,7 @@ document.addEventListener("click",e=>{
   if(t.closest("#rmExtra")&&S) return removeExtra();
   if(t.closest("#ssBreak")&&S) return breakToday();
   const pr=t.closest("[data-pair]"); if(pr&&S) return pairToday(+pr.dataset.pair);
+  const prp=t.closest("[data-prep]"); if(prp&&peCtx){const q=PROGRAM[peCtx.i].ex[peCtx.j]; q.id=prp.dataset.prep; delete q.note; progChanged(); $("#sheet").scrollTop=0; return peSheet()}
   if(t.closest("#peBreak")&&peCtx){unlink(PROGRAM[peCtx.i].ex,peCtx.j);progChanged();return peSheet()}
   const pp=t.closest("[data-ppair]"); if(pp&&peCtx){peCtx.j=linkPair(PROGRAM[peCtx.i].ex,peCtx.j,+pp.dataset.ppair);progChanged();return peSheet()}
   const sg=t.closest("[data-psug]"); if(sg) return sugSheet(+sg.dataset.psug);
@@ -1136,13 +1167,15 @@ document.addEventListener("click",e=>{
   if(t.closest("#finClose")){$("#finVeil").hidden=true;return}
   if(t.closest("#restSkip")){stopRest();return}
   if(t.closest("#restAdd")){if(rest){if(rest.done){rest={end:Date.now()+3e4,total:3e4,done:0};$("#rest").classList.remove("go-now");$("#buddy").classList.add("zz")}else{rest.end+=3e4;rest.total+=3e4}tick()}return}
-  if(t.closest("#startNext")){touched=true;boot(true);scrollTo(0,0);return}
+  const nd=t.closest("[data-newday]"); if(nd&&doneView){touched=true;doneView=null;editMode=false;S=newSession(+nd.dataset.newday);cur={e:0,s:0};initVals();render();scrollTo(0,0);return}
   const ea=t.closest("#early");
   if(ea){ if(Date.now()-earlyArmed<4000) finish(); else{earlyArmed=Date.now();ea.textContent="Tap again to finish now";} return}
 });
 document.addEventListener("change",e=>{if(e.target.id==="inW"||e.target.id==="inR"){readInputs();touched=true}
   if(e.target.dataset&&e.target.dataset.pname!=null){const i=+e.target.dataset.pname, v=e.target.value.trim(); if(v&&PROGRAM[i]){PROGRAM[i].name=v.slice(0,24);progChanged()}}});
-document.addEventListener("input",e=>{if(e.target.id==="libQ"){libQ=e.target.value;libList()}});
+document.addEventListener("focusin",e=>{if(e.target.id==="inW") showW()});
+document.addEventListener("focusout",e=>{if(e.target.id==="inW"){readInputs();setTimeout(showW,0)}});
+document.addEventListener("input",e=>{if(e.target.id==="inW") e.target.dataset.dirty="1";if(e.target.id==="libQ"){libQ=e.target.value;libList()}});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&S&&S.start) wake()});
 boot();
 {const probe=new Image(); probe.onerror=()=>{PHOTOS=false; render(); if(view==="Lib") renderLib(); if(view==="Prog") renderProg()}; probe.src="img/thumbs.jpg"}
@@ -1151,7 +1184,7 @@ boot();
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 /* ---------- standalone extras: backup, persistent storage, offline ---------- */
-const APP_VERSION="13 Nov 14:44";
+const APP_VERSION="13 Nov 15:04";
 (function(){
   const baseStats=renderStats;
   renderStats=function(){
