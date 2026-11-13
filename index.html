@@ -94,7 +94,20 @@ button.row{cursor:pointer}
 .holdt.hit{color:var(--ok)}
 .holdsub{color:var(--muted);font-weight:800;font-size:13px}
 .focus .linkbtn{padding:4px 16px}
-.figbtn:has(.ph){width:108px;height:72px;overflow:hidden}
+.figbtn:has(.ph){width:96px;height:64px;overflow:hidden}
+.focus{padding:14px;gap:11px}
+.fhead h2{font-size:20px}
+.fhead .meta{font-size:13.5px}
+.fsub{font-size:13.5px;font-weight:700;color:var(--muted);margin-top:-3px}
+.fsub b{color:var(--ink);font-weight:700}
+.chiprow{display:flex;align-items:center;gap:8px}
+.chiprow .chips{flex:1;min-width:0}
+.chiprow .swapbtn{align-self:center}
+.goal{padding:8px 12px;font-size:14px}
+.step button{height:48px}
+.go{height:62px}
+.sheet{overscroll-behavior:contain;touch-action:pan-y}
+.sheet::before{content:"";flex:none;align-self:center;width:44px;height:5px;border-radius:3px;background:var(--line);margin:-8px 0 0}
 .sheet>*{flex-shrink:0}
 .sheet .big.photo{display:block;padding:0;overflow:hidden}
 .sheet .big.photo+.big svg{max-width:210px}
@@ -454,6 +467,15 @@ Object.assign(EX,{
  hack_squat:{name:"Hack squat",mus:"Quads, glutes",tip:"Stand on the platform with your back and shoulders against the pads and your feet about shoulder-width apart. Release the safeties, lower as far as feels fine on your knees, then push back up without locking your knees.",start:20,inc:5,grp:"quads",p:["quads"],s:["glutes"],fig:EX.smith_squat.fig},
  hip_thrust_machine:{name:"Hip thrust machine",mus:"Glutes, hamstrings",tip:"Sit with your upper back on the pad and the belt or pad across your hips. Drive your hips up until your body is flat from shoulders to knees, pause, then lower under control.",start:30,inc:5,grp:"hams",p:["glutes"],s:["hams"],fig:EX.hip_thrust.fig}
 });
+Object.assign(EX,{
+ tbar_row:{name:"Chest-supported T-bar row",mus:"Mid back, lats, rear shoulders",tip:"Stand on the footplate and lie with your chest on the pad. Grip the handles, lift the bar off its rest, and pull it toward your chest by driving your elbows back. Squeeze your shoulder blades, then lower until your arms are straight. Log the plates you load, not counting the bar.",start:10,inc:5,grp:"back",p:["traps","lats"],s:["biceps","delts"],top:true,fig:EX.cs_row.fig},
+ reverse_cable_fly:{name:"Reverse cable crossover",mus:"Rear shoulders, upper back",tip:"Set both pulleys high and take off the handles or use small ones. Cross your arms and grab the left cable with your right hand and the right cable with your left. With arms almost straight, pull them apart and back until they are in line with your shoulders, then return slowly. Log the weight on one side.",start:5,inc:2.5,grp:"rear",p:["delts","traps"],s:[],fig:EX.face_pull.fig},
+ incline_reverse_fly:{name:"Incline dumbbell reverse fly",mus:"Rear shoulders, upper back",tip:"Lie chest-down on a low incline bench with a light dumbbell in each hand. With a slight bend in your elbows, raise your arms out to the sides until they are level with your shoulders, pause, then lower slowly.",start:4,inc:1,each:true,grp:"rear",p:["delts","traps"],s:[],fig:EX.cs_row.fig},
+ rotary_torso:{name:"Rotary torso machine",mus:"Side core (obliques), abs",tip:"Sit with your chest against the upper pads, hold the handles, and put your knees between the lower pads. Set the start position to one side, then turn your lower body across under control and return slowly. Keep the weight light and the movement smooth. Do all reps, then set it up for the other side.",start:15,inc:5,grp:"core",p:["obliques"],s:["abs"],fig:EX.pallof_press.fig}
+});
+EX.machine_row.name="Seated row machine";
+EX.machine_row.tip="Sit with your chest against the pad. Pull the handles back until your elbows pass your sides, squeeze your shoulder blades, then reach forward again. The wide, horizontal handles with your elbows out work your upper back more. The narrow handles with your elbows tucked work your lats more.";
+EX.back_extension.name="45° back extension";
 EX.hanging_knee_raise.name="Knee raise (hanging or supported)";
 EX.hanging_knee_raise.tip="Hang from a bar, or rest your forearms on the pads of a knee-raise station. Pull your knees up toward your chest without swinging, pause, then lower slowly. Leave the weight at 0.";
 const GROUPS=[["Chest",["chest"]],["Back",["lats","traps","lowback"]],["Shoulders",["delts"]],["Biceps",["biceps"]],["Triceps",["triceps"]],["Quads",["quads"]],["Hamstrings and glutes",["hams","glutes"]],["Calves",["calves"]],["Core",["abs","obliques"]]];
@@ -507,12 +529,12 @@ function reopen(){
 /* ---------- the program (editor comes later; this is the current draft) ---------- */
 const big=(id)=>({id,sets:3,lo:8,hi:12,rest:120}), small=(id)=>({id,sets:2,lo:10,hi:15,rest:75});
 /* Alex's own program. a = first of a superset (short rest, then straight to the partner), b = second or a single. */
-const PROGRAM_REV=2;
+const PROGRAM_REV=3;
 const sa=(id,sets,lo,hi,note)=>({id,sets,lo,hi,rest:50,ss:true,...(note?{note}:{})}), sb=(id,sets,lo,hi,note,rest)=>({id,sets,lo,hi,rest:rest||75,...(note?{note}:{})});
 const DEFAULT_PROGRAM=[
- {name:"Upper",ex:[sa("chest_press",3,6,10),sb("wide_row",3,8,12,"Elbows out, squeeze your shoulder blades"),sa("lat_pulldown",3,8,12),sb("machine_lateral",3,12,15),sa("pec_deck",2,10,15),sb("reverse_fly",2,12,15),sa("cable_curl",2,10,15),sb("pushdown",2,10,15)]},
+ {name:"Upper",ex:[sa("chest_press",3,6,10),sb("machine_row",3,8,12,"Wide handles, elbows out, squeeze your shoulder blades"),sa("lat_pulldown",3,8,12),sb("machine_lateral",3,12,15),sa("pec_deck",2,10,15),sb("reverse_cable_fly",2,12,15,"Pulleys set high"),sa("cable_curl",2,10,15),sb("pushdown",2,10,15)]},
  {name:"Lower",ex:[sb("leg_press",3,8,12,"Feet mid-high, controlled depth",120),sa("db_rdl",3,8,10),sb("pallof_press",3,10,10,"10 reps each side"),sa("leg_ext",3,10,15,"Lower slowly, about 3 seconds"),sb("leg_curl",3,10,15),sa("hip_thrust_machine",3,8,12),sb("calf_raise",3,10,15),sa("step_down",2,8,8,"8 each leg, slow, from a low box"),sb("side_plank",2,30,30,"30 seconds each side")]},
- {name:"Full body",ex:[sa("incline_machine_press",3,8,12),sb("hack_squat",3,8,12),sa("machine_row",3,8,12),sb("leg_curl",2,10,15),sa("machine_lateral",3,12,15),sb("reverse_fly",2,12,15),sa("hammer_curl",2,10,12),sb("overhead_ext",2,10,12),sb("back_extension",2,10,15,"Slow, no swinging")]}
+ {name:"Full body",ex:[sa("incline_machine_press",3,8,12),sb("hack_squat",3,8,12),sa("tbar_row",3,8,12),sb("leg_curl",2,10,15),sa("machine_lateral",3,12,15),sb("face_pull",2,12,15,"Rope, pull to your forehead, elbows high"),sa("hammer_curl",2,10,12),sb("overhead_ext",2,10,12),sb("back_extension",2,10,15,"Slow, no swinging")]}
 ];
 const clone=o=>JSON.parse(JSON.stringify(o));
 const LSP="liftbuddy.program.v1";
@@ -619,7 +641,7 @@ function figInner(fig,t){
     `<circle class="hd" cx="${h[0].toFixed(1)}" cy="${h[1].toFixed(1)}" r="7.5"/>`+
     d.map(c=>`<circle class="pp" cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${c[2]}"/>`).join("");
 }
-const PHOTO={"chest_press":0,"lat_pulldown":1,"shoulder_press":2,"seated_row":3,"lateral_raise":4,"curl":5,"pushdown":6,"leg_press":7,"rdl":8,"leg_ext":9,"leg_curl":10,"calf_raise":11,"plank":12,"split_squat":13,"incline_press":14,"cs_row":15,"hip_thrust":16,"db_bench":17,"goblet_squat":18,"hammer_curl":19,"machine_shoulder_press":20,"machine_row":21,"db_rdl":22,"push_up":23,"face_pull":24,"crunch":25,"pec_fly":26,"dip":27,"close_grip_pulldown":28,"pull_up":29,"one_arm_row":30,"back_extension":31,"cable_lateral":32,"reverse_fly":33,"incline_curl":34,"cable_curl":35,"overhead_ext":36,"skull_crusher":37,"smith_squat":38,"reverse_lunge":39,"lying_leg_curl":40,"glute_bridge":41,"seated_calf_raise":42,"hanging_knee_raise":43,"side_plank":44,"pallof_press":45,"woodchop":46,"barbell_squat":47,"bw_squat":48,"db_squat":49,"bulgarian":50,"pistol_squat":51,"step_up":52,"pec_deck":53,"hack_squat":54,"incline_machine_press":55}; const PROWS=7;
+const PHOTO={"chest_press":0,"lat_pulldown":1,"shoulder_press":2,"seated_row":3,"lateral_raise":4,"curl":5,"pushdown":6,"leg_press":7,"rdl":8,"leg_ext":9,"leg_curl":10,"calf_raise":11,"plank":12,"split_squat":13,"incline_press":14,"cs_row":15,"hip_thrust":16,"db_bench":17,"goblet_squat":18,"hammer_curl":19,"machine_shoulder_press":20,"machine_row":21,"db_rdl":22,"push_up":23,"face_pull":24,"crunch":25,"pec_fly":26,"dip":27,"close_grip_pulldown":28,"pull_up":29,"one_arm_row":30,"back_extension":31,"cable_lateral":32,"reverse_fly":33,"incline_curl":34,"cable_curl":35,"overhead_ext":36,"skull_crusher":37,"smith_squat":38,"reverse_lunge":39,"lying_leg_curl":40,"glute_bridge":41,"seated_calf_raise":42,"hanging_knee_raise":43,"side_plank":44,"pallof_press":45,"woodchop":46,"barbell_squat":47,"bw_squat":48,"db_squat":49,"bulgarian":50,"pistol_squat":51,"step_up":52,"pec_deck":53,"hack_squat":54,"incline_machine_press":55,"tbar_row":56,"reverse_cable_fly":57,"incline_reverse_fly":58,"rotary_torso":59}; const PROWS=8;
 let PHOTOS=true; /* switched off if the photo files cannot be loaded, so the sketches take over */
 const hasPhoto=id=>PHOTOS&&PHOTO[id]!=null;
 const figSVG=(id,live)=>{
@@ -685,8 +707,9 @@ function render(){
   const stepR=`<div class="step"><label for="inR">${x.timed?"seconds":"reps"}</label><button type="button" data-step="r:-1" aria-label="Fewer">−</button><input id="inR" type="number" inputmode="numeric" step="1" value="${vals.r}"><button type="button" data-step="r:1" aria-label="More">+</button></div>`;
   let h=(editMode?`<div class="goal first editbar"><span>Editing your workout from <b>${dstr(S.start)}</b></span><button type="button" id="editDone">Done</button></div>`:"")+`<section class="focus">
     <div class="fhead"><button type="button" class="figbtn" id="info" aria-label="How to do ${x.name}">${figSVG(x.id,true)}</button>
-      <div><h2>${x.name}</h2><div class="meta">${tg.tag} · Set ${cur.s+1} of ${x.sets} · ${x.lo===x.hi?x.lo:x.lo+"–"+x.hi} ${x.timed?"sec":"reps"}</div>${tg.multi?`<div class="meta">Superset with ${tg.grp.filter(i=>i!==cur.e).map(i=>EX[dex[i].id].name).join(" and ")}</div>`:""}${x.note?`<div class="meta nt">${x.note}</div>`:""}</div><button type="button" class="swapbtn" id="swap">Change</button></div>
-    <div class="chips">${chips(x,lg,cur.e)}</div>
+      <div><h2>${x.name}</h2><div class="meta">${tg.tag} · Set ${cur.s+1} of ${x.sets} · ${x.lo===x.hi?x.lo:x.lo+"–"+x.hi} ${x.timed?"sec":"reps"}</div></div></div>
+    ${tg.multi||x.note?`<div class="fsub">${tg.multi?`Superset with ${tg.grp.filter(i=>i!==cur.e).map(i=>EX[dex[i].id].name).join(" and ")}`:""}${tg.multi&&x.note?"<br>":""}${x.note?`<b>${x.note}</b>`:""}</div>`:""}
+    <div class="chiprow"><div class="chips">${chips(x,lg,cur.e)}</div><button type="button" class="swapbtn" id="swap">Change</button></div>
     ${goal}
     ${x.timed&&!editing?(hold?`<div class="holdbox"><div class="holdt" id="holdT" aria-live="off">0:00</div><div class="holdsub">Target ${hold.target} sec</div></div>
     <div class="gorow"><button type="button" class="go" id="holdStop">${CHECK}<span>Stop and log</span></button></div>`
@@ -1046,6 +1069,21 @@ document.addEventListener("keydown",e=>{
   if(b&&(e.key==="Enter"||e.key===" ")){e.preventDefault();readInputs();const [k,d]=b.dataset.step.split(":");stepVal(k,+d)}
   if(e.key==="Escape"){$("#sheetVeil").hidden=true}
 });
+{const sh=$("#sheet"); let y0=null, dy=0; /* swipe a sheet down to close it */
+  sh.addEventListener("touchstart",e=>{y0=sh.scrollTop<=0?e.touches[0].clientY:null;dy=0},{passive:true});
+  sh.addEventListener("touchmove",e=>{
+    if(y0==null) return; dy=e.touches[0].clientY-y0;
+    if(dy>0&&sh.scrollTop<=0){if(e.cancelable) e.preventDefault();sh.style.transition="none";sh.style.transform=`translateY(${dy}px)`}
+    else{sh.style.transform=""; if(dy<0) y0=null}
+  },{passive:false});
+  const end=()=>{
+    if(y0==null) return; y0=null;
+    if(dy>90){sh.style.transition="transform .18s ease-in";sh.style.transform="translateY(110%)";setTimeout(()=>{$("#sheetVeil").hidden=true;sh.style.transition="";sh.style.transform=""},180)}
+    else{sh.style.transition="transform .2s";sh.style.transform="";setTimeout(()=>{sh.style.transition=""},200)}
+    dy=0;
+  };
+  sh.addEventListener("touchend",end); sh.addEventListener("touchcancel",end);
+}
 let earlyArmed=0;
 document.addEventListener("click",e=>{
   const t=e.target;
@@ -1113,7 +1151,7 @@ boot();
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 /* ---------- standalone extras: backup, persistent storage, offline ---------- */
-const APP_VERSION="12 Nov 02:12";
+const APP_VERSION="13 Nov 14:44";
 (function(){
   const baseStats=renderStats;
   renderStats=function(){
