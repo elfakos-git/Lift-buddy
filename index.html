@@ -101,6 +101,19 @@ button.row{cursor:pointer}
 .fsub{font-size:13.5px;font-weight:700;color:var(--muted);margin-top:-3px}
 .fsub b{color:var(--ink);font-weight:700}
 .chiprow{display:flex;align-items:center;gap:8px}
+.focus.ss{box-shadow:0 6px 24px -14px rgba(20,24,60,.35),7px 7px 0 -1px var(--soft)}
+.sstog{display:flex;gap:4px;padding:3px;border-radius:999px;background:var(--soft);margin-top:-2px}
+.sstog button{flex:1;min-width:0;height:34px;padding:0 10px;border-radius:999px;font-weight:800;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.sstog button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.sstog b{color:var(--accent);margin-right:5px}
+.sshint{font-size:11.5px;font-weight:800;color:var(--muted);text-align:center;margin-top:-6px;letter-spacing:.02em}
+.focus .fsub:empty{display:none}
+.tsets{display:flex;align-items:center;gap:12px;background:var(--soft);border-radius:16px;padding:8px 10px}
+.tsets span{flex:1;font-weight:800}
+.tsets small{display:block;color:var(--muted);font-weight:700;font-size:12.5px}
+.tsets button{width:46px;height:44px;border-radius:12px;background:var(--card);font-family:var(--display);font-size:24px;font-weight:600}
+.tsets button:disabled{opacity:.35}
+.tsets output{font-family:var(--display);font-weight:700;font-size:26px;min-width:28px;text-align:center;font-variant-numeric:tabular-nums}
 .chiprow .chips{flex:1;min-width:0}
 .chiprow .swapbtn{align-self:center}
 .goal{padding:8px 12px;font-size:14px}
@@ -484,6 +497,11 @@ Object.assign(EX,{
 });
 ["seated_row","wide_row","pushdown","face_pull","pec_fly","cable_lateral","cable_curl","overhead_ext","pallof_press","woodchop","reverse_cable_fly"].forEach(k=>{const x=EX[k]; x.stack="cable"; x.start=CABLE_STACK.reduce((a,v)=>Math.abs(v-x.start)<Math.abs(a-x.start)?v:a,CABLE_STACK[0])});
 ["chest_press","lat_pulldown","close_grip_pulldown","machine_shoulder_press","machine_row","leg_press","leg_ext","leg_curl","lying_leg_curl","calf_raise","seated_calf_raise","pec_deck","reverse_fly","machine_lateral","incline_machine_press","hip_thrust_machine","rotary_torso","hack_squat","smith_squat"].forEach(k=>{const x=EX[k]; x.inc=5; x.start=Math.max(5,Math.round(x.start/5)*5)});
+Object.assign(EX,{
+ side_rear_raise:{name:"Side-lying rear delt raise",mus:"Rear shoulders, upper back",tip:"Lie on your side on a flat bench with a light dumbbell in your top hand, your arm hanging across in front of your chest. Keep a slight bend in the elbow and raise the dumbbell up and back in an arc until your arm points at the ceiling, then lower slowly. Do all reps, then switch sides.",start:3,inc:1,grp:"rear",p:["delts"],s:["traps"],
+  fig:{f:BENCH,a:{h:[35,57],l:[[[44,61],[66,61]],[[44,61],[52,66],[60,64]],[[66,61],[80,62],[80,88]]],d:[[60,64,3.6]]},b:{h:[35,57],l:[[[44,61],[66,61]],[[44,61],[46,46],[48,31]],[[66,61],[80,62],[80,88]]],d:[[48,31,3.6]]}}},
+ decline_crunch:{name:"Decline crunch",mus:"Abs",tip:"Hook your feet under the pads of the decline bench and lie back with your hands across your chest or behind your ears. Curl your shoulders up toward your knees by squeezing your abs, pause, then lean back slowly without letting your head touch the bench. Hold a plate on your chest to make it harder.",start:0,inc:2.5,grp:"core",p:["abs"],s:[],fig:EX.crunch.fig}
+});
 EX.machine_row.name="Seated row machine";
 EX.machine_row.tip="Sit with your chest against the pad. Pull the handles back until your elbows pass your sides, squeeze your shoulder blades, then reach forward again. The wide, horizontal handles with your elbows out work your upper back more. The narrow handles with your elbows tucked work your lats more.";
 EX.back_extension.name="45° back extension";
@@ -621,6 +639,14 @@ function seq(){ // the order sets are done in: supersets go round by round
   groupsOf(d).forEach(g=>{const m=Math.max(...g.map(i=>d[i].sets)); for(let r=0;r<m;r++) g.forEach(i=>{if(r<d[i].sets) q.push({e:i,s:r,id:d[i].id})})});
   return q;
 }
+function nextAfter(c){ // alternate inside a superset whichever half you started with, then move on
+  const ex=dayOf(S).ex, g=tagsOf(ex)[c.e].grp, k=g.indexOf(c.e);
+  const cnt=i=>(S.log[ex[i].id]||[]).filter(Boolean).length;
+  const open=i=>{const lg=S.log[ex[i].id]||[]; for(let s=0;s<ex[i].sets;s++) if(!lg[s]) return s; return -1};
+  for(let j=1;j<=g.length;j++){const m=g[(k+j)%g.length], s=open(m); if(s>=0&&(m===c.e||cnt(m)<=cnt(c.e))) return {e:m,s}}
+  for(const m of g){const s=open(m); if(s>=0) return {e:m,s}}
+  return firstOpen(0,c);
+}
 function firstOpen(from,after){
   const q=seq(); if(!q.length) return null; let st=0;
   if(after){const i=q.findIndex(o=>o.e===after.e&&o.s===after.s); if(i>=0) st=i+1}
@@ -659,7 +685,7 @@ function figInner(fig,t){
     `<circle class="hd" cx="${h[0].toFixed(1)}" cy="${h[1].toFixed(1)}" r="7.5"/>`+
     d.map(c=>`<circle class="pp" cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${c[2]}"/>`).join("");
 }
-const PHOTO={"chest_press":0,"lat_pulldown":1,"shoulder_press":2,"seated_row":3,"lateral_raise":4,"curl":5,"pushdown":6,"leg_press":7,"rdl":8,"leg_ext":9,"leg_curl":10,"calf_raise":11,"plank":12,"split_squat":13,"incline_press":14,"cs_row":15,"hip_thrust":16,"db_bench":17,"goblet_squat":18,"hammer_curl":19,"machine_shoulder_press":20,"machine_row":21,"db_rdl":22,"push_up":23,"face_pull":24,"crunch":25,"pec_fly":26,"dip":27,"close_grip_pulldown":28,"pull_up":29,"one_arm_row":30,"back_extension":31,"cable_lateral":32,"reverse_fly":33,"incline_curl":34,"cable_curl":35,"overhead_ext":36,"skull_crusher":37,"smith_squat":38,"reverse_lunge":39,"lying_leg_curl":40,"glute_bridge":41,"seated_calf_raise":42,"hanging_knee_raise":43,"side_plank":44,"pallof_press":45,"woodchop":46,"barbell_squat":47,"bw_squat":48,"db_squat":49,"bulgarian":50,"pistol_squat":51,"step_up":52,"pec_deck":53,"hack_squat":54,"incline_machine_press":55,"tbar_row":56,"reverse_cable_fly":57,"incline_reverse_fly":58,"rotary_torso":59}; const PROWS=8;
+const PHOTO={"chest_press":0,"lat_pulldown":1,"shoulder_press":2,"seated_row":3,"lateral_raise":4,"curl":5,"pushdown":6,"leg_press":7,"rdl":8,"leg_ext":9,"leg_curl":10,"calf_raise":11,"plank":12,"split_squat":13,"incline_press":14,"cs_row":15,"hip_thrust":16,"db_bench":17,"goblet_squat":18,"hammer_curl":19,"machine_shoulder_press":20,"machine_row":21,"db_rdl":22,"push_up":23,"face_pull":24,"crunch":25,"pec_fly":26,"dip":27,"close_grip_pulldown":28,"pull_up":29,"one_arm_row":30,"back_extension":31,"cable_lateral":32,"reverse_fly":33,"incline_curl":34,"cable_curl":35,"overhead_ext":36,"skull_crusher":37,"smith_squat":38,"reverse_lunge":39,"lying_leg_curl":40,"glute_bridge":41,"seated_calf_raise":42,"hanging_knee_raise":43,"side_plank":44,"pallof_press":45,"woodchop":46,"barbell_squat":47,"bw_squat":48,"db_squat":49,"bulgarian":50,"pistol_squat":51,"step_up":52,"pec_deck":53,"hack_squat":54,"incline_machine_press":55,"tbar_row":56,"reverse_cable_fly":57,"incline_reverse_fly":58,"rotary_torso":59,"decline_crunch":60}; const PROWS=8;
 let PHOTOS=true; /* switched off if the photo files cannot be loaded, so the sketches take over */
 const hasPhoto=id=>PHOTOS&&PHOTO[id]!=null;
 const figSVG=(id,live)=>{
@@ -723,10 +749,12 @@ function render(){
   else goal=`<div class="goal">Last time <b>${fmtH(t.ref.w)} kg × ${t.ref.r}</b>. ${t.r>t.ref.r?`Beat it with <b>${t.r}</b> reps.`:`Match it, then add weight next time.`}</div>`;
   const stepW=x.timed?"":`<div class="step"><label for="inW">kg${x.each?" each hand":x.stack==="cable"?" on the stack":""}</label><button type="button" data-step="w:-1" aria-label="Less weight">−</button><span class="numw"><input id="inW" type="text" inputmode="decimal" autocomplete="off" aria-label="Weight in kg" value="${fmtW(vals.w)}"></span><button type="button" data-step="w:1" aria-label="More weight">+</button></div>`;
   const stepR=`<div class="step"><label for="inR">${x.timed?"seconds":"reps"}</label><button type="button" data-step="r:-1" aria-label="Fewer">−</button><input id="inR" type="number" inputmode="numeric" step="1" value="${vals.r}"><button type="button" data-step="r:1" aria-label="More">+</button></div>`;
-  let h=(editMode?`<div class="goal first editbar"><span>Editing your workout from <b>${dstr(S.start)}</b></span><button type="button" id="editDone">Done</button></div>`:"")+`<section class="focus">
+  const ssTog=tg.multi?`<div class="sstog" role="group" aria-label="Superset">${tg.grp.map(i=>`<button type="button" data-flip="${i}" aria-pressed="${i===cur.e}"><b>${tags[i].tag}</b>${EX[dex[i].id].name}</button>`).join("")}</div><div class="sshint">Swipe the card to flip</div>`:"";
+  let h=(editMode?`<div class="goal first editbar"><span>Editing your workout from <b>${dstr(S.start)}</b></span><button type="button" id="editDone">Done</button></div>`:"")+`<section class="focus${tg.multi?" ss":""}">
+    ${ssTog}
     <div class="fhead"><button type="button" class="figbtn" id="info" aria-label="How to do ${x.name}">${figSVG(x.id,true)}</button>
       <div><h2>${x.name}</h2><div class="meta">${tg.tag} · Set ${cur.s+1} of ${x.sets} · ${x.lo===x.hi?x.lo:x.lo+"–"+x.hi} ${x.timed?"sec":"reps"}</div></div></div>
-    ${tg.multi||x.note?`<div class="fsub">${tg.multi?`Superset with ${tg.grp.filter(i=>i!==cur.e).map(i=>EX[dex[i].id].name).join(" and ")}`:""}${tg.multi&&x.note?"<br>":""}${x.note?`<b>${x.note}</b>`:""}</div>`:""}
+    ${x.note?`<div class="fsub"><b>${x.note}</b></div>`:""}
     <div class="chiprow"><div class="chips">${chips(x,lg,cur.e)}</div><button type="button" class="swapbtn" id="swap">Change</button></div>
     ${goal}
     ${x.timed&&!editing?(hold?`<div class="holdbox"><div class="holdt" id="holdT" aria-live="off">0:00</div><div class="holdsub">Target ${hold.target} sec</div></div>
@@ -746,7 +774,8 @@ function render(){
   if(S.start&&!editMode) h+=`<div style="display:flex;justify-content:center"><button type="button" class="linkbtn" id="early">Finish workout</button></div>`;
   main.innerHTML=h; popKey=null; setSync(); showW();
   const fk=S.day+":"+x.id;
-  if(lastFocus!==null&&fk!==lastFocus&&!still){const f=main.querySelector(".focus"); if(f&&f.animate) f.animate([{opacity:.25,transform:"translateX(26px) scale(.97)"},{opacity:1,transform:"none"}],{duration:320,easing:"cubic-bezier(.3,1.35,.5,1)"})}
+  if(flipIn){const f=main.querySelector(".focus"); if(f&&f.animate) f.animate([{transform:`perspective(900px) rotateY(${flipIn>0?80:-80}deg)`,opacity:.6},{transform:"perspective(900px) rotateY(0deg)",opacity:1}],{duration:280,easing:"cubic-bezier(.3,1.25,.5,1)"}); flipIn=0}
+  else if(lastFocus!==null&&fk!==lastFocus&&!still){const f=main.querySelector(".focus"); if(f&&f.animate) f.animate([{opacity:.25,transform:"translateX(26px) scale(.97)"},{opacity:1,transform:"none"}],{duration:320,easing:"cubic-bezier(.3,1.35,.5,1)"})}
   lastFocus=fk;
 }
 function setSync(st){
@@ -755,7 +784,23 @@ function setSync(st){
 }
 
 /* ---------- program editor + library ---------- */
-let lastFocus=null;
+let lastFocus=null, flipIn=0;
+function flipTo(i,dir){ // turn the card over to the other half of the superset
+  if(!S||hold||i===cur.e) return;
+  const pl=dayOf(S).ex, lg=S.log[pl[i].id]||[]; let s=0; while(s<pl[i].sets-1&&lg[s]) s++;
+  const go=()=>{readInputs();cur={e:i,s};touched=true;initVals();flipIn=dir;render()};
+  const f=$("#main .focus");
+  if(still||!f||!f.animate) return go();
+  f.animate([{transform:"perspective(900px) rotateY(0deg)"},{transform:`perspective(900px) rotateY(${dir>0?-80:80}deg)`,opacity:.6}],{duration:140,easing:"ease-in",fill:"forwards"}).onfinish=go;
+}
+function flipBy(dir){
+  if(!S) return; const g=tagsOf(dayOf(S).ex)[cur.e]; if(!g||!g.multi) return;
+  const k=g.grp.indexOf(cur.e); flipTo(g.grp[(k+dir+g.grp.length)%g.grp.length],dir);
+}
+{let sx=null,sy=0; const m=$("#main");
+  m.addEventListener("touchstart",e=>{const t=e.target; sx=t.closest(".focus.ss")&&!t.closest("[data-step],input,.sstog")?e.touches[0].clientX:null; sy=e.touches[0].clientY},{passive:true});
+  m.addEventListener("touchend",e=>{if(sx==null) return; const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy; sx=null; if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.6) flipBy(dx<0?1:-1)},{passive:true});
+}
 function snapRows(){const m={};document.querySelectorAll("#vProg [data-key]").forEach(el=>m[el.dataset.key]=el.getBoundingClientRect().top);return m}
 function flip(before,moved){ // rows glide from where they were to where they are now
   if(still) return;
@@ -955,7 +1000,7 @@ function logSet(){
   countPrs();
   popKey=x.id+":"+cur.s; save(S); hop();
   if(v.pr) burst(40);
-  const wasEdit=editing, nxt=firstOpen(0,{e:cur.e,s:cur.s});
+  const wasEdit=editing, nxt=nextAfter(cur);
   if(editMode){ if(nxt&&!wasEdit) cur=nxt; initVals(); render(); return }
   if(!nxt){finish();return}
   cur=nxt; initVals(); render();
@@ -978,8 +1023,16 @@ function swapSheet(){
   if(t.multi) body+=`<p>In a superset with ${t.grp.filter(i=>i!==cur.e).map(i=>EX[pl[i].id].name).join(" and ")}.</p><button type="button" class="ghost" id="ssBreak">Break this superset</button>`;
   else{const c=partnersFor(pl,cur.e,noLog);
     body+=c.length?`<div class="opts">${c.map(o=>`<button type="button" class="opt" data-pair="${o.i}"><span class="mini">${figSVG(pl[o.i].id,false)}</span><span>Pair with ${EX[pl[o.i].id].name}<small>${pairWhy(slot.id,pl[o.i].id)}</small></span></button>`).join("")}</div>`:`<p>Nothing left today pairs well with this one.</p>`}
-  $("#sheet").innerHTML=`<div class="mus">For today only</div><h3>${x.name}</h3>${body}${!has&&pl.length>1?`<button type="button" class="ghost" id="rmExtra" style="color:var(--accent)">Remove from today</button>`:""}<button type="button" class="ghost" id="sheetClose">Cancel</button>`;
+  const done=(S.log[x.id]||[]).filter(Boolean).length;
+  const ts=`<div class="tsets"><span>Sets today<small>Program says ${(slot.orig?null:progDay(S).ex.find(q=>q.id===slot.id)||{}).sets||slot.sets}</small></span><button type="button" data-tsets="-1" aria-label="One set fewer"${slot.sets<=Math.max(1,done)?" disabled":""}>−</button><output>${slot.sets}</output><button type="button" data-tsets="1" aria-label="One set more"${slot.sets>=8?" disabled":""}>+</button></div>`;
+  $("#sheet").innerHTML=`<div class="mus">For today only</div><h3>${x.name}</h3>${ts}${body}${!has&&pl.length>1?`<button type="button" class="ghost" id="rmExtra" style="color:var(--accent)">Remove from today</button>`:""}<button type="button" class="ghost" id="sheetClose">Cancel</button>`;
   $("#sheetVeil").hidden=false; $("#sheet").scrollTop=0;
+}
+function todaySets(d){
+  const slot=baseOf(S)[cur.e], done=(S.log[slot.id]||[]).filter(Boolean).length;
+  slot.sets=Math.max(1,done,Math.min(8,slot.sets+d));
+  if(cur.s>=slot.sets) cur=firstOpen(0)||{e:cur.e,s:slot.sets-1};
+  touched=true; if(S.start) save(S); initVals(); render(); swapSheet();
 }
 function doSwap(id){
   const slot=baseOf(S)[cur.e], orig=slot.orig||slot.id;
@@ -1118,6 +1171,7 @@ let earlyArmed=0;
 document.addEventListener("click",e=>{
   const t=e.target;
   if(t.closest("#go")) return logSet();
+  const fl=t.closest("[data-flip]"); if(fl&&S){const i=+fl.dataset.flip; return flipTo(i,i>cur.e?1:-1)}
   if(t.closest("#holdStart")&&S) return startHold();
   if(t.closest("#holdStop")&&S) return stopHold();
   if(t.closest("#del")) return delSet();
@@ -1143,6 +1197,7 @@ document.addEventListener("click",e=>{
     pdelArmed=[i,Date.now()];pd.textContent="Tap again to remove";return}
   if(t.closest("#rmExtra")&&S) return removeExtra();
   if(t.closest("#ssBreak")&&S) return breakToday();
+  const tsb=t.closest("[data-tsets]"); if(tsb&&S) return todaySets(+tsb.dataset.tsets);
   const pr=t.closest("[data-pair]"); if(pr&&S) return pairToday(+pr.dataset.pair);
   const prp=t.closest("[data-prep]"); if(prp&&peCtx){const q=PROGRAM[peCtx.i].ex[peCtx.j]; q.id=prp.dataset.prep; delete q.note; progChanged(); $("#sheet").scrollTop=0; return peSheet()}
   if(t.closest("#peBreak")&&peCtx){unlink(PROGRAM[peCtx.i].ex,peCtx.j);progChanged();return peSheet()}
@@ -1184,7 +1239,7 @@ boot();
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 /* ---------- standalone extras: backup, persistent storage, offline ---------- */
-const APP_VERSION="13 Nov 15:04";
+const APP_VERSION="17 Nov 13:15";
 (function(){
   const baseStats=renderStats;
   renderStats=function(){
