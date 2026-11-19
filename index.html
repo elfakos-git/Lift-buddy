@@ -343,6 +343,8 @@ button.row{cursor:pointer}
 <script>
 /* the gym's cable stacks are 10 lb plates labelled in kg: 5, 9, 14, 18, 23 ... 91 */
 const CABLE_STACK=Array.from({length:20},(_,n)=>Math.round((n+1)*4.5359237));
+/* the rotary torso's stack, read off its plates */
+const ROTARY_STACK=[7,9,14,18,23,30,36,43,50,57,64,70,77,84,91];
 /* ---------- exercise catalog: name, muscles, cue, starting weight, and a two-pose stick figure ---------- */
 const SEAT=[[55,66],[72,66],[72,88]], STAND_LEG=[[60,58],[60,76],[60,92]];
 const EX={
@@ -502,6 +504,12 @@ Object.assign(EX,{
   fig:{f:BENCH,a:{h:[35,57],l:[[[44,61],[66,61]],[[44,61],[52,66],[60,64]],[[66,61],[80,62],[80,88]]],d:[[60,64,3.6]]},b:{h:[35,57],l:[[[44,61],[66,61]],[[44,61],[46,46],[48,31]],[[66,61],[80,62],[80,88]]],d:[[48,31,3.6]]}}},
  decline_crunch:{name:"Decline crunch",mus:"Abs",tip:"Hook your feet under the pads of the decline bench and lie back with your hands across your chest or behind your ears. Curl your shoulders up toward your knees by squeezing your abs, pause, then lean back slowly without letting your head touch the bench. Hold a plate on your chest to make it harder.",start:0,inc:2.5,grp:"core",p:["abs"],s:[],fig:EX.crunch.fig}
 });
+EX.rotary_torso.stack=ROTARY_STACK; EX.rotary_torso.start=14;
+Object.assign(EX,{
+ bench_dip:{name:"Bench dip",mus:"Triceps, chest, front shoulders",tip:"Sit on the edge of a bench with your hands beside your hips, fingers forward, and walk your feet out. Slide your hips off the bench and bend your elbows to lower yourself toward the floor until your upper arms are about level, then press back up. Bend your knees to make it easier, or straighten your legs to make it harder. Stop if your shoulders complain. Leave the weight at 0, or log a plate on your lap.",start:0,inc:5,grp:"triceps",p:["triceps"],s:["chest","delts"],
+  fig:{f:[[[40,58],[64,58]],[[44,58],[44,92]],[[60,58],[60,92]],[[10,94],[104,94]]],a:{h:[64,22],l:[[[64,34],[64,58]],[[64,34],[66,46],[62,58]],[[64,58],[82,62],[96,92]]],d:[]},b:{h:[68,38],l:[[[68,50],[68,74]],[[68,50],[58,52],[62,58]],[[68,74],[84,72],[96,92]]],d:[]}}},
+ arm_curl_machine:{name:"Biceps curl machine",mus:"Biceps",tip:"Set the seat so your upper arms rest flat on the pad with your elbows lined up with the machine's pivot. Curl the handles up toward your shoulders, squeeze, then lower slowly until your arms are almost straight.",start:15,inc:5,grp:"biceps",p:["biceps"],s:[],fig:EX.incline_curl.fig}
+});
 EX.machine_row.name="Seated row machine";
 EX.machine_row.tip="Sit with your chest against the pad. Pull the handles back until your elbows pass your sides, squeeze your shoulder blades, then reach forward again. The wide, horizontal handles with your elbows out work your upper back more. The narrow handles with your elbows tucked work your lats more.";
 EX.back_extension.name="45° back extension";
@@ -616,11 +624,12 @@ const fmtW=w=>(Math.round(w*100)/100).toString();
 /* half kilos read as a little ½ instead of ".5", so 12.5 never needs more room than 12 */
 const fmtH=w=>{const r=Math.round(w*100)/100, i=Math.trunc(r); return Math.abs(r-i-.5)<1e-9?(i?i:"")+"½":String(r)};
 const fmtSet=(x,v)=>x.timed?v.r+"s":fmtH(v.w)+"×"+v.r;
-function stackStep(w,dir){
-  if(dir>0){const v=CABLE_STACK.find(v=>v>w+.01); return v!=null?v:Math.round(w+4.5)}
-  const below=CABLE_STACK.filter(v=>v<w-.01); return below.length?below[below.length-1]:0;
+const stackOf=x=>x.stack==="cable"?CABLE_STACK:Array.isArray(x.stack)?x.stack:null;
+function stackStep(st,w,dir){
+  if(dir>0){const v=st.find(v=>v>w+.01); return v!=null?v:Math.round(w+(st[st.length-1]-st[st.length-2]))}
+  const below=st.filter(v=>v<w-.01); return below.length?below[below.length-1]:0;
 }
-const nextW=(x,w,dir)=>x.stack==="cable"?stackStep(w,dir):Math.max(0,Math.round((w+dir*x.inc)*100)/100);
+const nextW=(x,w,dir)=>stackOf(x)?stackStep(stackOf(x),w,dir):Math.max(0,Math.round((w+dir*x.inc)*100)/100);
 const e1=(v,x)=>x.timed||!v.w?v.r:v.w*(1+v.r/30);
 
 function newSession(day){day=Math.min(day,PROGRAM.length-1);return {id:null,day,pname:PROGRAM[day].name,plan:clone(PROGRAM[day].ex),start:null,end:null,log:{},prs:0,updatedAt:0}}
@@ -685,7 +694,7 @@ function figInner(fig,t){
     `<circle class="hd" cx="${h[0].toFixed(1)}" cy="${h[1].toFixed(1)}" r="7.5"/>`+
     d.map(c=>`<circle class="pp" cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${c[2]}"/>`).join("");
 }
-const PHOTO={"chest_press":0,"lat_pulldown":1,"shoulder_press":2,"seated_row":3,"lateral_raise":4,"curl":5,"pushdown":6,"leg_press":7,"rdl":8,"leg_ext":9,"leg_curl":10,"calf_raise":11,"plank":12,"split_squat":13,"incline_press":14,"cs_row":15,"hip_thrust":16,"db_bench":17,"goblet_squat":18,"hammer_curl":19,"machine_shoulder_press":20,"machine_row":21,"db_rdl":22,"push_up":23,"face_pull":24,"crunch":25,"pec_fly":26,"dip":27,"close_grip_pulldown":28,"pull_up":29,"one_arm_row":30,"back_extension":31,"cable_lateral":32,"reverse_fly":33,"incline_curl":34,"cable_curl":35,"overhead_ext":36,"skull_crusher":37,"smith_squat":38,"reverse_lunge":39,"lying_leg_curl":40,"glute_bridge":41,"seated_calf_raise":42,"hanging_knee_raise":43,"side_plank":44,"pallof_press":45,"woodchop":46,"barbell_squat":47,"bw_squat":48,"db_squat":49,"bulgarian":50,"pistol_squat":51,"step_up":52,"pec_deck":53,"hack_squat":54,"incline_machine_press":55,"tbar_row":56,"reverse_cable_fly":57,"incline_reverse_fly":58,"rotary_torso":59,"decline_crunch":60}; const PROWS=8;
+const PHOTO={"chest_press":0,"lat_pulldown":1,"shoulder_press":2,"seated_row":3,"lateral_raise":4,"curl":5,"pushdown":6,"leg_press":7,"rdl":8,"leg_ext":9,"leg_curl":10,"calf_raise":11,"plank":12,"split_squat":13,"incline_press":14,"cs_row":15,"hip_thrust":16,"db_bench":17,"goblet_squat":18,"hammer_curl":19,"machine_shoulder_press":20,"machine_row":21,"db_rdl":22,"push_up":23,"face_pull":24,"crunch":25,"pec_fly":26,"dip":27,"close_grip_pulldown":28,"pull_up":29,"one_arm_row":30,"back_extension":31,"cable_lateral":32,"reverse_fly":33,"incline_curl":34,"cable_curl":35,"overhead_ext":36,"skull_crusher":37,"smith_squat":38,"reverse_lunge":39,"lying_leg_curl":40,"glute_bridge":41,"seated_calf_raise":42,"hanging_knee_raise":43,"side_plank":44,"pallof_press":45,"woodchop":46,"barbell_squat":47,"bw_squat":48,"db_squat":49,"bulgarian":50,"pistol_squat":51,"step_up":52,"pec_deck":53,"hack_squat":54,"incline_machine_press":55,"tbar_row":56,"reverse_cable_fly":57,"incline_reverse_fly":58,"rotary_torso":59,"decline_crunch":60,"bench_dip":61,"arm_curl_machine":62}; const PROWS=8;
 let PHOTOS=true; /* switched off if the photo files cannot be loaded, so the sketches take over */
 const hasPhoto=id=>PHOTOS&&PHOTO[id]!=null;
 const figSVG=(id,live)=>{
@@ -747,7 +756,7 @@ function render(){
   else if(x.timed) goal=`<div class="goal">Last time <b>${t.ref.r} sec</b>. Hold for <b>${t.r}</b> today.</div>`;
   else if(t.up) goal=`<div class="goal">You hit ${x.hi} reps on every set last time. <b>Go up to ${fmtH(t.w)} kg</b>.</div>`;
   else goal=`<div class="goal">Last time <b>${fmtH(t.ref.w)} kg × ${t.ref.r}</b>. ${t.r>t.ref.r?`Beat it with <b>${t.r}</b> reps.`:`Match it, then add weight next time.`}</div>`;
-  const stepW=x.timed?"":`<div class="step"><label for="inW">kg${x.each?" each hand":x.stack==="cable"?" on the stack":""}</label><button type="button" data-step="w:-1" aria-label="Less weight">−</button><span class="numw"><input id="inW" type="text" inputmode="decimal" autocomplete="off" aria-label="Weight in kg" value="${fmtW(vals.w)}"></span><button type="button" data-step="w:1" aria-label="More weight">+</button></div>`;
+  const stepW=x.timed?"":`<div class="step"><label for="inW">kg${x.each?" each hand":stackOf(x)?" on the stack":""}</label><button type="button" data-step="w:-1" aria-label="Less weight">−</button><span class="numw"><input id="inW" type="text" inputmode="decimal" autocomplete="off" aria-label="Weight in kg" value="${fmtW(vals.w)}"></span><button type="button" data-step="w:1" aria-label="More weight">+</button></div>`;
   const stepR=`<div class="step"><label for="inR">${x.timed?"seconds":"reps"}</label><button type="button" data-step="r:-1" aria-label="Fewer">−</button><input id="inR" type="number" inputmode="numeric" step="1" value="${vals.r}"><button type="button" data-step="r:1" aria-label="More">+</button></div>`;
   const ssTog=tg.multi?`<div class="sstog" role="group" aria-label="Superset">${tg.grp.map(i=>`<button type="button" data-flip="${i}" aria-pressed="${i===cur.e}"><b>${tags[i].tag}</b>${EX[dex[i].id].name}</button>`).join("")}</div><div class="sshint">Swipe the card to flip</div>`:"";
   let h=(editMode?`<div class="goal first editbar"><span>Editing your workout from <b>${dstr(S.start)}</b></span><button type="button" id="editDone">Done</button></div>`:"")+`<section class="focus${tg.multi?" ss":""}">
@@ -1239,7 +1248,7 @@ boot();
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 /* ---------- standalone extras: backup, persistent storage, offline ---------- */
-const APP_VERSION="17 Nov 13:15";
+const APP_VERSION="19 Nov 09:36";
 (function(){
   const baseStats=renderStats;
   renderStats=function(){
