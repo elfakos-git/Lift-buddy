@@ -436,7 +436,7 @@ Object.assign(EX,{
   fig:{f:[[[50,72],[62,60]],[[56,66],[56,92]],[[24,92],[36,92]]],a:{h:[78,86],l:[[[72,78],[56,62]],[[72,78],[66,81],[64,73]],[[56,62],[43,76],[30,90]]],d:[]},b:{h:[84,30],l:[[[78,38],[56,62]],[[78,38],[72,43],[71,35]],[[56,62],[43,76],[30,90]]],d:[]}}},
  cable_lateral:{...EX.lateral_raise,name:"Cable lateral raise",each:false,start:3,inc:1,tip:"Stand side-on to a low cable and hold the handle in your far hand. Raise your arm out to the side until it is level with your shoulder, then lower slowly. Do all reps, then switch sides."},
  reverse_fly:{name:"Reverse pec deck fly",mus:"Rear shoulders, upper back",tip:"Sit facing the pad of the pec deck with the handles in front of you. With arms almost straight, sweep them out and back until they are in line with your shoulders, then return slowly.",start:15,inc:2.5,grp:"rear",p:["delts","traps"],s:[],fig:EX.cs_row.fig},
- incline_curl:{name:"Incline dumbbell curl",mus:"Biceps",tip:"Lie back on a bench set to about 60 degrees and let your arms hang straight down, palms forward. Curl up without moving your elbows forward, then lower to a full stretch.",start:6,inc:1,each:true,grp:"biceps",p:["biceps"],s:[],
+ incline_curl:{name:"Seated incline dumbbell curl",kw:"sitting incline bench biceps",mus:"Biceps",tip:"Sit back on a bench set to about 60 degrees and let your arms hang straight down, palms forward. Curl up without moving your elbows forward, then lower to a full stretch.",start:6,inc:1,each:true,grp:"biceps",p:["biceps"],s:[],
   fig:{f:INCL,a:{h:[62,36],l:[[[56,46],[44,66]],[[56,46],[56,60],[57,74]],[[44,66],[62,68],[62,90]]],d:[[57,74,3.5]]},b:{h:[62,36],l:[[[56,46],[44,66]],[[56,46],[56,60],[66,50]],[[44,66],[62,68],[62,90]]],d:[[66,50,3.5]]}}},
  cable_curl:{...EX.curl,name:"Cable curl",each:false,start:15,inc:2.5,tip:"Stand facing a low cable with a straight bar, palms up. Keep your elbows at your sides and curl the bar to your shoulders, then lower until your arms are straight."},
  overhead_ext:{name:"Overhead cable triceps extension",mus:"Triceps",tip:"Face away from a low or mid cable holding the rope behind your head, elbows pointing up. Straighten your arms overhead, then let the rope pull your hands back down behind your head for a deep stretch.",start:12,inc:2.5,grp:"triceps",p:["triceps"],s:[],
@@ -450,7 +450,7 @@ Object.assign(EX,{
   fig:{f:[[[60,80],[84,80],[84,94]],[[60,80],[60,94]],[[10,94],[104,94]]],a:{h:[70,10],l:[[[70,22],[70,48]],[[70,22],[71,36],[72,50]],[[70,48],[70,64],[70,80]],[[70,48],[63,62],[56,74]]],d:[]},b:{h:[72,22],l:[[[72,34],[68,58]],[[72,34],[74,48],[76,60]],[[68,58],[78,68],[70,80]],[[68,58],[60,74],[54,92]]],d:[]}}},
  wall_sit:{name:"Wall sit",mus:"Quads",tip:"Slide your back down a wall until your thighs are level with the floor, or higher if your knees complain. Hold the position and breathe.",timed:true,start:0,inc:0,grp:"hold",p:["quads"],s:[],
   fig:{f:[[[38,8],[38,94]],[[10,94],[104,94]]],a:{h:[46,38],l:[[[45,50],[45,74]],[[45,50],[52,60],[60,70]],[[45,74],[66,74],[66,94]]],d:[]},b:{h:[46,39.5],l:[[[45,51.5],[45,74]],[[45,51.5],[52,61],[60,70]],[[45,74],[66,74],[66,94]]],d:[]}}},
- lying_leg_curl:{name:"Lying leg curl",mus:"Hamstrings",tip:"Lie face down with the pad just above your heels. Curl your heels toward your glutes, pause, then lower slowly. Keep your hips pressed into the bench.",start:20,inc:2.5,grp:"hams",p:["hams"],s:[],
+ lying_leg_curl:{name:"Lying leg curl",mus:"Hamstrings",tip:"Lie face down on the machine with your knees just past the end of the bench and the pad just above your heels. Hold the handles, curl your heels toward your glutes, pause, then lower slowly. Keep your hips pressed into the bench.",start:20,inc:2.5,grp:"hams",p:["hams"],s:[],
   fig:{f:[[[20,66],[78,66]],[[28,66],[28,90]],[[70,66],[70,90]]],a:{h:[22,56],l:[[[30,60],[56,60]],[[30,60],[28,70],[22,72]],[[56,60],[74,60],[92,60]]],d:[[92,60,3.2]]},b:{h:[22,56],l:[[[30,60],[56,60]],[[30,60],[28,70],[22,72]],[[56,60],[74,60],[70,40]]],d:[[70,40,3.2]]}}},
  glute_bridge:{name:"Glute bridge",mus:"Glutes, hamstrings",tip:"Lie on your back with your knees bent and feet flat. Squeeze your glutes to lift your hips until your body is straight from shoulders to knees, pause, then lower.",start:0,inc:5,grp:"hams",p:["glutes"],s:["hams"],
   fig:{f:[[[10,88],[104,88]]],a:{h:[22,79],l:[[[30,82],[54,82]],[[30,82],[40,84],[50,84]],[[54,82],[68,66],[76,86]]],d:[]},b:{h:[22,79],l:[[[30,82],[54,66]],[[30,82],[40,84],[50,84]],[[54,66],[70,64],[76,86]]],d:[]}}},
@@ -570,8 +570,8 @@ const PROGRAM_REV=3;
 const sa=(id,sets,lo,hi,note)=>({id,sets,lo,hi,rest:50,ss:true,...(note?{note}:{})}), sb=(id,sets,lo,hi,note,rest)=>({id,sets,lo,hi,rest:rest||75,...(note?{note}:{})});
 const DEFAULT_PROGRAM=[
  {name:"Upper",ex:[sa("chest_press",3,6,10),sb("machine_row",3,8,12,"Wide handles, elbows out, squeeze your shoulder blades"),sa("lat_pulldown",3,8,12),sb("machine_lateral",3,12,15),sa("pec_deck",2,10,15),sb("reverse_cable_fly",2,12,15,"Pulleys set high"),sa("cable_curl",2,10,15),sb("pushdown",2,10,15)]},
- {name:"Lower",ex:[sb("leg_press",3,8,12,"Feet mid-high, controlled depth",120),sa("db_rdl",3,8,10),sb("pallof_press",3,10,10,"10 reps each side"),sa("leg_ext",3,10,15,"Lower slowly, about 3 seconds"),sb("leg_curl",3,10,15),sa("hip_thrust_machine",3,8,12),sb("calf_raise",3,10,15),sa("step_down",2,8,8,"8 each leg, slow, from a low box"),sb("side_plank",2,30,30,"30 seconds each side")]},
- {name:"Full body",ex:[sa("incline_machine_press",3,8,12),sb("hack_squat",3,8,12),sa("tbar_row",3,8,12),sb("leg_curl",2,10,15),sa("machine_lateral",3,12,15),sb("face_pull",2,12,15,"Rope, pull to your forehead, elbows high"),sa("hammer_curl",2,10,12),sb("overhead_ext",2,10,12),sb("back_extension",2,10,15,"Slow, no swinging")]}
+ {name:"Lower",ex:[sb("leg_press",3,8,12,"Feet mid-high, controlled depth",120),sa("db_rdl",3,8,10),sb("pallof_press",3,10,10,"10 reps each side"),sa("leg_ext",3,10,15,"Lower slowly, about 3 seconds"),sb("lying_leg_curl",3,10,15),sa("hip_thrust_machine",3,8,12),sb("calf_raise",3,10,15),sa("step_down",2,8,8,"8 each leg, slow, from a low box"),sb("side_plank",2,30,30,"30 seconds each side")]},
+ {name:"Full body",ex:[sa("incline_machine_press",3,8,12),sb("hack_squat",3,8,12),sa("tbar_row",3,8,12),sb("lying_leg_curl",2,10,15),sa("machine_lateral",3,12,15),sb("face_pull",2,12,15,"Rope, pull to your forehead, elbows high"),sa("hammer_curl",2,10,12),sb("overhead_ext",2,10,12),sb("back_extension",2,10,15,"Slow, no swinging")]}
 ];
 const clone=o=>JSON.parse(JSON.stringify(o));
 const LSP="liftbuddy.program.v1";
@@ -947,7 +947,7 @@ function renderLib(){
 }
 function libList(){
   const q=libQ.trim().toLowerCase();
-  const ids=Object.keys(EX).filter(k=>(libG===-2?EX[k].top:libG===-3?EX[k].knee:libG<0||EX[k].p.some(m=>GROUPS[libG][1].includes(m)))&&(!q||(EX[k].name+" "+EX[k].mus).toLowerCase().includes(q))).sort((a,b)=>EX[a].name.localeCompare(EX[b].name));
+  const ids=Object.keys(EX).filter(k=>(libG===-2?EX[k].top:libG===-3?EX[k].knee:libG<0||EX[k].p.some(m=>GROUPS[libG][1].includes(m)))&&(!q||(EX[k].name+" "+EX[k].mus+" "+(EX[k].kw||"")).toLowerCase().includes(q))).sort((a,b)=>EX[a].name.localeCompare(EX[b].name));
   $("#libList").innerHTML=ids.length?ids.map(k=>`<button type="button" class="row" data-info="${k}"><span class="mini">${figSVG(k,false)}</span><span class="body"><span class="nm">${EX[k].name}</span><small>${EX[k].top?"★ Top pick · ":""}${EX[k].knee?"Knee strength · ":""}${EX[k].mus}</small></span></button>`).join(""):`<p class="sync">No exercise matches that.</p>`;
 }
 function infoSheet(id){
@@ -1033,7 +1033,7 @@ function swapSheet(){
   else{const c=partnersFor(pl,cur.e,noLog);
     body+=c.length?`<div class="opts">${c.map(o=>`<button type="button" class="opt" data-pair="${o.i}"><span class="mini">${figSVG(pl[o.i].id,false)}</span><span>Pair with ${EX[pl[o.i].id].name}<small>${pairWhy(slot.id,pl[o.i].id)}</small></span></button>`).join("")}</div>`:`<p>Nothing left today pairs well with this one.</p>`}
   const done=(S.log[x.id]||[]).filter(Boolean).length;
-  const ts=`<div class="tsets"><span>Sets today<small>Program says ${(slot.orig?null:progDay(S).ex.find(q=>q.id===slot.id)||{}).sets||slot.sets}</small></span><button type="button" data-tsets="-1" aria-label="One set fewer"${slot.sets<=Math.max(1,done)?" disabled":""}>−</button><output>${slot.sets}</output><button type="button" data-tsets="1" aria-label="One set more"${slot.sets>=8?" disabled":""}>+</button></div>`;
+  const ts=`<div class="tsets"><span>Sets today<small>Program says ${((slot.orig?null:progDay(S).ex.find(q=>q.id===slot.id))||slot).sets}</small></span><button type="button" data-tsets="-1" aria-label="One set fewer"${slot.sets<=Math.max(1,done)?" disabled":""}>−</button><output>${slot.sets}</output><button type="button" data-tsets="1" aria-label="One set more"${slot.sets>=8?" disabled":""}>+</button></div>`;
   $("#sheet").innerHTML=`<div class="mus">For today only</div><h3>${x.name}</h3>${ts}${body}${!has&&pl.length>1?`<button type="button" class="ghost" id="rmExtra" style="color:var(--accent)">Remove from today</button>`:""}<button type="button" class="ghost" id="sheetClose">Cancel</button>`;
   $("#sheetVeil").hidden=false; $("#sheet").scrollTop=0;
 }
@@ -1149,6 +1149,13 @@ async function push(s){
 /* ---------- events ---------- */
 let rep=null;
 const stopRep=()=>{clearTimeout(rep);clearInterval(rep);rep=null};
+function recover(err){ // one bad tap must never leave the screen dead: log it and repaint
+  try{console.error(err)}catch(e){}
+  stopRep();
+  try{$("#sheetVeil").hidden=true; if(S&&!dayOf(S).ex[cur.e]) cur=firstOpen(0)||{e:0,s:0}; if(S) initVals(); render(); if(view!=="Today") setView(view)}catch(e){}
+}
+addEventListener("error",e=>recover(e.error||e.message));
+addEventListener("unhandledrejection",e=>recover(e.reason));
 document.addEventListener("pointerdown",e=>{
   const b=e.target.closest("[data-step]"); if(!b) return;
   e.preventDefault(); readInputs(); touched=true;
@@ -1241,6 +1248,16 @@ document.addEventListener("focusin",e=>{if(e.target.id==="inW") showW()});
 document.addEventListener("focusout",e=>{if(e.target.id==="inW"){readInputs();setTimeout(showW,0)}});
 document.addEventListener("input",e=>{if(e.target.id==="inW") e.target.dataset.dirty="1";if(e.target.id==="libQ"){libQ=e.target.value;libList()}});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&S&&S.start) wake()});
+/* Alex's gym has a lying leg curl, not a seated one: move the program and past sets over once */
+(function(){
+  const F="liftbuddy.mig.lyingcurl"; try{if(localStorage.getItem(F)) return}catch(e){return}
+  const sw=list=>{let n=0;(list||[]).forEach(q=>{if(q.id==="leg_curl"){q.id="lying_leg_curl";n++} if(q.orig==="leg_curl") q.orig="lying_leg_curl"});return n};
+  let changed=0; PROGRAM.forEach(d=>changed+=sw(d.ex));
+  sessions.forEach(s=>{let n=sw(s.plan); if(s.log&&s.log.leg_curl&&!s.log.lying_leg_curl){s.log.lying_leg_curl=s.log.leg_curl;delete s.log.leg_curl;n++} if(n){s.updatedAt=Date.now()}});
+  try{localStorage.setItem(LS,JSON.stringify(sessions))}catch(e){}
+  if(changed){progAt=Date.now(); try{localStorage.setItem(LSP,JSON.stringify({days:PROGRAM,updatedAt:progAt,rev:PROGRAM_REV}))}catch(e){}}
+  try{localStorage.setItem(F,String(Date.now()))}catch(e){}
+})();
 boot();
 {const probe=new Image(); probe.onerror=()=>{PHOTOS=false; render(); if(view==="Lib") renderLib(); if(view==="Prog") renderProg()}; probe.src="img/thumbs.jpg"}
 </script>
@@ -1248,7 +1265,7 @@ boot();
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 /* ---------- standalone extras: backup, persistent storage, offline ---------- */
-const APP_VERSION="19 Nov 09:36";
+const APP_VERSION="21 Nov 07:34";
 (function(){
   const baseStats=renderStats;
   renderStats=function(){
@@ -1303,6 +1320,7 @@ const APP_VERSION="19 Nov 09:36";
       const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"}); if(!r.ok) return;
       const v=(await r.json()).version; if(!v||v===APP_VERSION) return;
       if(hold||rest) return; /* never interrupt a running timer; the next check will catch it */
+      if(S&&S.start&&!S.end) return; /* never reload in the middle of a workout: a tap would land on a reloading page */
       let tried=""; try{tried=sessionStorage.getItem("lb.reloadedFor")||""}catch(e){}
       if(tried===v) return;
       try{sessionStorage.setItem("lb.reloadedFor",v)}catch(e){}
